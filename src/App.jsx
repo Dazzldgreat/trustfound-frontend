@@ -52,7 +52,7 @@ import RecoverItem from "./pages/RecoverItem";
 ============================================================ */
 
 import StaffLoginPage from "./pages/StaffLoginPage";
-import StaffDashboard from "./pages/staffDashboard";
+import StaffDashboard from "./pages/StaffDashboard";
 import StaffQRScanner from "./pages/StaffQRScanner";
 import StaffVerificationSuccess from "./pages/StaffVerificationSuccess";
 import StaffFoundItemDetail from "./pages/StaffFoundItemDetail";

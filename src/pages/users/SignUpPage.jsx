@@ -5,8 +5,7 @@ import {
     useNavigate,
 } from "react-router-dom";
 
-const API = "http://127.0.0.1:8000/api";
-
+import { API } from "../../config";
 const DEFAULT_SETTINGS = {
     primary_color: "#2563eb",
     secondary_color: "#1d4ed8",

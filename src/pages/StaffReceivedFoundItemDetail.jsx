@@ -30,7 +30,7 @@ function StaffReceivedFoundItemDetail() {
                 const access = localStorage.getItem("access");
 
                 const response = await fetch(
-                    `http://127.0.0.1:8000/api/staff/report-found-item/${id}/`,
+                    `https://trustfound-backend.onrender.com/api/staff/report-found-item/${id}/`,
                     {
                         headers: {
                             Authorization: `Bearer ${access}`,

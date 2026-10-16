@@ -17,8 +17,7 @@ import {
     Sparkles,
 } from "lucide-react";
 
-const API = "http://127.0.0.1:8000/api";
-
+import { API } from "../../config";
 const DEFAULT_SETTINGS = {
     hero_title: "Welcome to our Lost & Found",
     hero_subtitle:

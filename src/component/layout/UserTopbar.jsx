@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Menu, Bell, ChevronDown } from "lucide-react";
 
-const API_BASE_URL = "http://127.0.0.1:8000/api";
+import { API as API_BASE_URL } from "../../config";
 
 const DEFAULT_SETTINGS = {
     primary_color: "#2563eb",

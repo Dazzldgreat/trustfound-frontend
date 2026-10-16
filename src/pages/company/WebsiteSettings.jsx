@@ -19,8 +19,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 
-const API = "http://127.0.0.1:8000/api";
-
+import { API } from "../../config";
 // ============================================================
 // TRUSTFOUND DEFAULT SETTINGS
 // Keep these as the values used by Restore Defaults.
@@ -189,7 +188,7 @@ function getImageUrl(value) {
     return value;
   }
 
-  return `http://127.0.0.1:8000${
+  return `https://trustfound-backend.onrender.com${
     value.startsWith("/") ? "" : "/"
   }${value}`;
 }

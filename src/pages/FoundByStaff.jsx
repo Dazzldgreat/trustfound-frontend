@@ -26,10 +26,9 @@ import {
     Building2,
 } from "lucide-react";
 
-const API = "http://127.0.0.1:8000/api";
-
+import { API } from "../config";
 const COMPANY_LOGO =
-    "http://127.0.0.1:8000/media/companies/logos/javic.png";
+    "https://trustfound-backend.onrender.com/media/companies/logos/javic.png";
 
 const DEFAULT_COMPANY_NAME = "Javic High school";
 const DEFAULT_COMPANY_ID = "javic-high-school";

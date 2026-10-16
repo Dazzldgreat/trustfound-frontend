@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-const API = "http://127.0.0.1:8000/api";
-
+import { API } from "../config";
 function StaffLoginPage() {
   const navigate = useNavigate();
   const params = useParams();

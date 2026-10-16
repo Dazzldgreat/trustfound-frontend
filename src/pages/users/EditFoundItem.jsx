@@ -2,7 +2,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-const API = "http://127.0.0.1:8000/api";
+import { API } from "../../config";
 const API_ORIGIN = API.replace("/api", "");
 
 const DEFAULT_WEBSITE_SETTINGS = {

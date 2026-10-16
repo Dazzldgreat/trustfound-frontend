@@ -1,6 +1,6 @@
 import React from "react";
 
-const SERVER = "http://127.0.0.1:8000";
+const SERVER = "https://trustfound-backend.onrender.com";
 
 function ReportCard({
     report,

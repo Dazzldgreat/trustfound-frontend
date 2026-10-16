@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
-const API = "http://127.0.0.1:8000/api";
-
+import { API } from "../config";
 const DEFAULT_SETTINGS = {
     hero_title: "Lost Something? Find It Here.",
     hero_subtitle:

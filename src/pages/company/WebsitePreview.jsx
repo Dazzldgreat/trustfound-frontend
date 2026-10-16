@@ -10,8 +10,7 @@ import {
     Globe,
 } from "lucide-react";
 
-const API = "http://127.0.0.1:8000/api";
-
+import { API } from "../../config";
 const DEFAULT_SETTINGS = {
     hero_title: "Lost Something? Find It Here.",
     hero_subtitle:

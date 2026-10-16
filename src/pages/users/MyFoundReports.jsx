@@ -10,8 +10,7 @@ import ReportCard from "../../component/Reports/ReportCard";
 import ReportFilters from "../../component/Reports/ReportFilters";
 import SearchBar from "../../component/Reports/SearchBar";
 
-const API = "http://127.0.0.1:8000/api";
-
+import { API } from "../../config";
 // ============================================================
 // DEFAULT WEBSITE SETTINGS
 // ============================================================

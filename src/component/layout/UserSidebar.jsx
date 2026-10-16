@@ -15,8 +15,8 @@ import {
     UserRound,
 } from "lucide-react";
 
-const API = "http://127.0.0.1:8000/api";
-const SERVER_ORIGIN = "http://127.0.0.1:8000";
+import { API } from "../../config";
+const SERVER_ORIGIN = "https://trustfound-backend.onrender.com";
 
 const DEFAULT_SETTINGS = {
     primary_color: "#2563eb",

@@ -9,7 +9,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
-const API = "http://127.0.0.1:8000";
+import { API_BASE_URL as API } from "../config";
 
 function StaffNotifications() {
   const navigate = useNavigate();

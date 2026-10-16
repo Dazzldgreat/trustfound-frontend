@@ -34,7 +34,7 @@ export default function CompanyVerifyCodePage() {
 
     try {
       const response = await fetch(
-        "http://127.0.0.1:8000/api/company/verify-registration/",
+        "https://trustfound-backend.onrender.com/api/company/verify-registration/",
         {
           method: "POST",
           headers: {
@@ -87,7 +87,7 @@ export default function CompanyVerifyCodePage() {
 
     try {
       const response = await fetch(
-        "http://127.0.0.1:8000/api/company/resend-registration-code/",
+        "https://trustfound-backend.onrender.com/api/company/resend-registration-code/",
         {
           method: "POST",
           headers: {

@@ -24,8 +24,7 @@ import {
     XCircle,
 } from "lucide-react";
 
-const API = "http://127.0.0.1:8000/api";
-
+import { API } from "../../config";
 const DEFAULT_WEBSITE_SETTINGS = {
     primary_color: "#4f46e5",
     secondary_color: "#0f172a",

@@ -32,9 +32,7 @@ import {
 // API
 // =============================================================
 
-const API = "http://127.0.0.1:8000/api";
-
-
+import { API } from "../config";
 // =============================================================
 // CATEGORIES
 // =============================================================
@@ -103,7 +101,7 @@ function StaffReportFoundItem() {
 
     const storedCompanyLogo =
         storedCompany.logo ||
-        "http://127.0.0.1:8000/media/companies/logos/javic.png";
+        "https://trustfound-backend.onrender.com/media/companies/logos/javic.png";
 
 
     // =========================================================

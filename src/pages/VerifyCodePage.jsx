@@ -1,3 +1,4 @@
+import { API } from "../config";
 import React, { useState } from "react";
 import {
   useNavigate,
@@ -24,7 +25,7 @@ function VerifyCodePage() {
 
     try {
       const response = await fetch(
-        "http://127.0.0.1:8000/api/verify-code/",
+        `${API}/verify-code/`,
         {
           method: "POST",
           headers: {
@@ -100,7 +101,7 @@ function VerifyCodePage() {
 
       try {
         const response = await fetch(
-          "http://127.0.0.1:8000/api/resend-code/",
+          `${API}/resend-code/`,
           {
             method: "POST",
             headers: {

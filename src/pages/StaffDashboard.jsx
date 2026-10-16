@@ -23,8 +23,7 @@ import {
     Activity,
 } from "lucide-react";
 
-const API = "http://127.0.0.1:8000/api";
-
+import { API } from "../config";
 function StaffDashboard() {
     const navigate = useNavigate();
     const { companySlug } = useParams();
@@ -112,12 +111,12 @@ function StaffDashboard() {
         let cleanImage = String(image).trim();
 
         const duplicatedUrl =
-            "http://127.0.0.1:8000http://127.0.0.1:8000";
+            "https://trustfound-backend.onrender.comhttps://trustfound-backend.onrender.com";
 
         if (cleanImage.includes(duplicatedUrl)) {
             cleanImage = cleanImage.replace(
                 duplicatedUrl,
-                "http://127.0.0.1:8000"
+                "https://trustfound-backend.onrender.com"
             );
         }
 

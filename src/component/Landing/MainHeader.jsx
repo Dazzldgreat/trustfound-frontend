@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,181 +19,189 @@ const links = [
 ];
 
 export default function MainHeader() {
-
   const [open, setOpen] = useState(false);
-
   const [scrolled, setScrolled] = useState(false);
-
-  const [dark, setDark] = useState(
+  const [dark, setDark] = useState(() =>
     document.documentElement.classList.contains("dark")
   );
 
   useEffect(() => {
-    const onScroll = () => {
-      setScrolled(window.scrollY > 40);
-    };
+    const onScroll = () => setScrolled(window.scrollY > 40);
 
-    window.addEventListener("scroll", onScroll);
-
+    window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const toggleDark = () => {
-    document.documentElement.classList.toggle("dark");
-    setDark(!dark);
-  };
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", dark);
+  }, [dark]);
+
+  // Close the mobile menu when the viewport becomes desktop-sized.
+  useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth >= 1024) setOpen(false);
+    };
+
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const closeMenu = () => setOpen(false);
+
+  const headerLinkClass =
+    "font-semibold text-slate-700 dark:text-slate-200 hover:text-primary transition";
 
   return (
     <header
-      className={`fixed top-5 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-7xl transition-all duration-500 ${
+      className={`fixed top-3 sm:top-5 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-7xl rounded-2xl border border-white/20 transition-all duration-300 ${
         scrolled
-          ? "bg-white/90 dark:bg-slate-900/90 shadow-2xl backdrop-blur-xl"
-          : "bg-white/70 dark:bg-slate-900/70 backdrop-blur-lg"
-      } rounded-2xl border border-white/20`}
+          ? "bg-white/95 dark:bg-slate-900/95 shadow-2xl backdrop-blur-xl"
+          : "bg-white/85 dark:bg-slate-900/85 backdrop-blur-lg"
+      }`}
     >
-      <div className="px-6 lg:px-10 h-20 flex items-center justify-between">
-
+      <div className="px-3 sm:px-6 lg:px-8 h-[72px] sm:h-20 flex items-center justify-between gap-3">
         {/* LOGO */}
-
         <Link
           to="/"
-          className="flex items-center gap-3"
+          onClick={closeMenu}
+          className="flex items-center gap-2 sm:gap-3 min-w-0 shrink"
         >
           <motion.div
             whileHover={{ rotate: 360 }}
-            transition={{ duration: .8 }}
-            className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-blue-500 flex items-center justify-center text-white font-black text-xl"
+            transition={{ duration: 0.8 }}
+            className="w-10 h-10 sm:w-12 sm:h-12 shrink-0 rounded-xl bg-gradient-to-br from-primary to-blue-500 flex items-center justify-center text-white font-black text-lg sm:text-xl"
           >
             LF
           </motion.div>
 
-          <div>
-
-            <h2 className="font-black text-xl text-slate-800 dark:text-white">
+          <div className="min-w-0">
+            <h2 className="font-black text-base sm:text-xl text-slate-800 dark:text-white">
               LostFound
             </h2>
-
-            <p className="text-xs text-slate-500">
+            <p className="hidden sm:block text-xs text-slate-500 dark:text-slate-400">
               AI Recovery Platform
             </p>
-
           </div>
-
         </Link>
 
-        {/* DESKTOP NAV */}
-
-        <nav className="hidden lg:flex items-center gap-10">
-
+        {/* DESKTOP NAVIGATION */}
+        <nav className="hidden lg:flex items-center gap-5 xl:gap-8">
           {links.map((item) => (
-
             <a
               key={item.title}
               href={item.href}
-              className="relative font-semibold text-slate-700 dark:text-slate-200 hover:text-primary transition"
+              className={`${headerLinkClass} relative`}
             >
               {item.title}
-
-              <span className="absolute left-0 -bottom-1 h-[2px] bg-primary w-0 hover:w-full transition-all duration-300"></span>
-
             </a>
-
           ))}
-
         </nav>
 
-        {/* ACTIONS */}
-
-        <div className="hidden lg:flex items-center gap-4">
-
+        {/* DESKTOP ACTIONS */}
+        <div className="hidden lg:flex items-center gap-3 xl:gap-4">
           <button
-            onClick={toggleDark}
-            className="w-11 h-11 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center"
+            type="button"
+            onClick={() => setDark((previous) => !previous)}
+            aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+            className="w-10 h-10 rounded-full border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800"
           >
-            {dark ? (
-              <Sun size={18} />
-            ) : (
-              <Moon size={18} />
-            )}
+            {dark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
 
-          <button className="w-11 h-11 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center">
-            <Search size={18}/>
+          <button
+            type="button"
+            aria-label="Search"
+            onClick={() => {
+              document.getElementById("features")?.scrollIntoView({
+                behavior: "smooth",
+              });
+            }}
+            className="w-10 h-10 rounded-full border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            <Search size={18} />
           </button>
 
           <Link
-            to="company/login"
-            className="font-semibold text-primary"
+            to="/company/login"
+            className="font-semibold text-primary hover:opacity-75 whitespace-nowrap"
           >
             Company Login
           </Link>
 
           <Link
             to="/company/register"
-            className="px-6 py-3 rounded-xl bg-primary text-white font-bold shadow-lg hover:scale-105 transition"
+            className="px-4 xl:px-5 py-3 rounded-xl bg-primary text-white font-bold shadow-lg hover:scale-105 transition whitespace-nowrap"
           >
             Get Started
           </Link>
-
         </div>
 
-        {/* MOBILE */}
-
+        {/* MOBILE MENU BUTTON */}
         <button
-          onClick={() => setOpen(!open)}
-          className="lg:hidden"
+          type="button"
+          onClick={() => setOpen((previous) => !previous)}
+          aria-label={open ? "Close navigation menu" : "Open navigation menu"}
+          aria-expanded={open}
+          className="lg:hidden shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-slate-800 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
         >
-          {open ? <X/> : <Menu/>}
+          {open ? <X size={24} /> : <Menu size={24} />}
         </button>
-
       </div>
 
-      <AnimatePresence>
-
+      {/* MOBILE NAVIGATION */}
+      <AnimatePresence initial={false}>
         {open && (
-
           <motion.div
-            initial={{ height:0, opacity:0 }}
-            animate={{ height:"auto", opacity:1 }}
-            exit={{ height:0, opacity:0 }}
-            className="overflow-hidden lg:hidden"
+            key="mobile-menu"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="lg:hidden overflow-hidden border-t border-slate-200 dark:border-slate-700"
           >
-
-            <div className="px-8 pb-8 flex flex-col gap-5">
-
-              {links.map((item)=>(
+            <nav className="max-h-[75vh] overflow-y-auto px-5 sm:px-8 py-5 flex flex-col gap-4 bg-white dark:bg-slate-900 rounded-b-2xl">
+              {links.map((item) => (
                 <a
                   key={item.title}
                   href={item.href}
-                  onClick={()=>setOpen(false)}
-                  className="font-semibold"
+                  onClick={closeMenu}
+                  className={headerLinkClass}
                 >
                   {item.title}
                 </a>
               ))}
 
-              <Link
-                to="/loginpage"
-                className="text-primary font-bold"
-              >
-                Login
-              </Link>
+              <div className="border-t border-slate-200 dark:border-slate-700 pt-4 flex flex-col gap-4">
+                <button
+                  type="button"
+                  onClick={() => setDark((previous) => !previous)}
+                  className="flex items-center gap-3 text-left text-slate-700 dark:text-slate-200 font-semibold"
+                >
+                  {dark ? <Sun size={19} /> : <Moon size={19} />}
+                  {dark ? "Light Mode" : "Dark Mode"}
+                </button>
 
-              <Link
-                to="/register"
-                className="bg-primary text-white rounded-xl py-3 text-center font-bold"
-              >
-                Get Started
-              </Link>
+                {/* Company login is now available on mobile */}
+                <Link
+                  to="/company/login"
+                  onClick={closeMenu}
+                  className="text-primary font-bold"
+                >
+                  Company Login
+                </Link>
 
-            </div>
-
+                <Link
+                  to="/company/register"
+                  onClick={closeMenu}
+                  className="bg-primary text-white rounded-xl py-3 text-center font-bold"
+                >
+                  Get Started
+                </Link>
+              </div>
+            </nav>
           </motion.div>
-
         )}
-
       </AnimatePresence>
-
     </header>
   );
 }

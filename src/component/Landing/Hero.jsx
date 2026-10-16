@@ -113,7 +113,7 @@ export default function Hero() {
               </Link>
 
               <Link
-                to="/login-page"
+                to="/company/login"
                 className="px-8 py-4 rounded-xl bg-white text-slate-900 font-bold hover:scale-105 transition"
               >
 

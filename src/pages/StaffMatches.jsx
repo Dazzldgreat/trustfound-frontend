@@ -121,7 +121,7 @@ function StaffMatches() {
             }
 
             const response = await fetch(
-                `${API}/api/staff/matches/`,
+                `${API}/staff/matches/`,
                 {
                     method: "GET",
                     headers: {

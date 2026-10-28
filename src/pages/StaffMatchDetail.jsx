@@ -95,7 +95,7 @@ function StaffMatchDetail() {
       }
 
       const response = await fetch(
-        `${API}/api/staff/matches/${id}/`,
+        `${API}/staff/matches/${id}/`,
         {
           method: "GET",
           headers: {
@@ -180,7 +180,7 @@ function StaffMatchDetail() {
       }
 
       const response = await fetch(
-        `${API}/api/staff/matches/${id}/approve/`,
+        `${API}/staff/matches/${id}/approve/`,
         {
           method: "POST",
           headers: {
@@ -255,7 +255,7 @@ function StaffMatchDetail() {
       }
 
       const response = await fetch(
-        `${API}/api/staff/matches/${id}/reject/`,
+        `${API}/staff/matches/${id}/reject/`,
         {
           method: "POST",
           headers: {

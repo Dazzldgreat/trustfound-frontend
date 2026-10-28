@@ -1,7 +1,6 @@
 
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import {
   Building2,
   Lock,
@@ -10,8 +9,7 @@ import {
   ArrowRight,
   ShieldCheck,
 } from "lucide-react";
-
-const API_BASE_URL = "https://trustfound-backend.onrender.com/api";
+import { API } from "../../config";
 
 export default function CompanyLoginPage() {
   const navigate = useNavigate();
@@ -42,20 +40,17 @@ export default function CompanyLoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/company/login/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            username: form.username.trim(),
-            password: form.password,
-          }),
-        }
-      );
+      const response = await fetch(`${API}/company/login/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          username: form.username.trim(),
+          password: form.password,
+        }),
+      });
 
       const data = await response.json().catch(() => ({}));
 
@@ -73,24 +68,25 @@ export default function CompanyLoginPage() {
         );
       }
 
-      // Your Django API returns tokens inside data.tokens.
       const accessToken = data.tokens?.access;
       const refreshToken = data.tokens?.refresh;
 
       if (!accessToken || !refreshToken) {
         throw new Error(
-          "Login response did not contain both access and refresh tokens. Check your Django login response."
+          "The server response is missing the access or refresh token. Check your Django login response."
         );
       }
 
-      // Decode enough of the access token to catch obvious
-      // token-storage mistakes. Django remains responsible for
-      // verifying the signature and authenticating the token.
       let payload;
 
       try {
-        const base64 = accessToken
-          .split(".")[1]
+        const tokenParts = accessToken.split(".");
+
+        if (tokenParts.length !== 3) {
+          throw new Error("Invalid JWT format.");
+        }
+
+        const base64 = tokenParts[1]
           .replace(/-/g, "+")
           .replace(/_/g, "/");
 
@@ -99,19 +95,19 @@ export default function CompanyLoginPage() {
         );
       } catch {
         throw new Error(
-          "The server returned an unreadable access token. Please check your Django JWT configuration."
+          "The server returned an invalid access token. Check your Django JWT configuration."
         );
       }
 
       if (payload.token_type !== "access") {
         throw new Error(
-          "The server did not return an access token. Check your Django token generation."
+          "The server did not return an access token."
         );
       }
 
       if (payload.exp && Date.now() >= payload.exp * 1000) {
         throw new Error(
-          "The server returned an expired access token. Please check your Django JWT settings."
+          "The server returned an expired access token."
         );
       }
 
@@ -120,13 +116,11 @@ export default function CompanyLoginPage() {
 
       if (!company?.slug) {
         throw new Error(
-          "Login succeeded, but the company slug is missing from the response."
+          "Login response is missing the company slug."
         );
       }
 
-      // Clear previous authentication before saving the new session.
-      // Keep the aliases because other existing TrustFound pages
-      // may still read access, refresh, or company_slug.
+      // Clear previous company authentication values.
       const oldKeys = [
         "access_token",
         "access",
@@ -143,28 +137,27 @@ export default function CompanyLoginPage() {
 
       oldKeys.forEach((key) => localStorage.removeItem(key));
 
-      // Store the access token consistently.
+      // Preserve token aliases used by existing TrustFound pages.
       localStorage.setItem("access_token", accessToken);
       localStorage.setItem("access", accessToken);
       localStorage.setItem("company_access", accessToken);
 
-      // Store the refresh token separately.
       localStorage.setItem("refresh_token", refreshToken);
       localStorage.setItem("refresh", refreshToken);
       localStorage.setItem("company_refresh", refreshToken);
 
-      // Store company and user information.
       localStorage.setItem("user", JSON.stringify(user || {}));
       localStorage.setItem("company_user", JSON.stringify(user || {}));
       localStorage.setItem("company", JSON.stringify(company));
       localStorage.setItem("companySlug", company.slug);
       localStorage.setItem("company_slug", company.slug);
 
-      // Navigate only after all required values have been saved.
       navigate("/company-dashboard", { replace: true });
     } catch (err) {
       setError(
-        err.message || "Unable to log in. Please try again."
+        err instanceof Error
+          ? err.message
+          : "Unable to log in. Please try again."
       );
     } finally {
       setLoading(false);
@@ -172,21 +165,16 @@ export default function CompanyLoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-slate-950 px-6 py-12">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-6 py-12">
       {/* Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -left-40 h-[500px] w-[500px] rounded-full bg-primary/20 blur-[140px]" />
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -left-40 -top-40 h-[500px] w-[500px] rounded-full bg-primary/20 blur-[140px]" />
         <div className="absolute bottom-0 right-0 h-[500px] w-[500px] rounded-full bg-cyan-500/10 blur-[140px]" />
       </div>
 
       <div className="relative grid w-full max-w-6xl items-center gap-12 lg:grid-cols-2">
         {/* Left side */}
-        <motion.div
-          initial={{ opacity: 0, x: -30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6 }}
-          className="hidden lg:block"
-        >
+        <div className="hidden lg:block">
           <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2">
             <ShieldCheck size={18} className="text-emerald-400" />
             <span className="text-sm font-semibold text-white">
@@ -224,17 +212,11 @@ export default function CompanyLoginPage() {
               <p className="mt-1 text-sm text-slate-400">Secure</p>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Login card */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="mx-auto w-full max-w-md"
-        >
+        <div className="mx-auto w-full max-w-md">
           <div className="rounded-3xl bg-white p-8 shadow-2xl dark:bg-slate-900 md:p-10">
-            {/* Logo */}
             <div className="mb-6 flex justify-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-blue-500 shadow-lg">
                 <Building2 size={30} className="text-white" />
@@ -250,7 +232,6 @@ export default function CompanyLoginPage() {
               </p>
             </div>
 
-            {/* Error */}
             {error && (
               <div
                 role="alert"
@@ -260,7 +241,6 @@ export default function CompanyLoginPage() {
               </div>
             )}
 
-            {/* Form */}
             <form onSubmit={handleSubmit} className="mt-8 space-y-5">
               {/* Username */}
               <div>
@@ -352,7 +332,6 @@ export default function CompanyLoginPage() {
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-4 font-bold text-white shadow-lg transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
               >
                 {loading ? "Signing in..." : "Sign In"}
-
                 {!loading && <ArrowRight size={19} />}
               </button>
             </form>
@@ -380,7 +359,7 @@ export default function CompanyLoginPage() {
               </Link>
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   );

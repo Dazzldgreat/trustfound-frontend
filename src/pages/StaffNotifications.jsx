@@ -137,7 +137,7 @@ function StaffNotifications() {
       setError("");
 
       const response = await fetch(
-        `${API}/api/staff/notifications/`,
+        `${API}/staff/notifications/`,
         {
           method: "GET",
           headers: {
@@ -227,7 +227,7 @@ function StaffNotifications() {
 
     try {
       const response = await fetch(
-        `${API}/api/staff/notifications/${id}/read/`,
+        `${API}/staff/notifications/${id}/read/`,
         {
           method: "POST",
           headers: {
@@ -295,7 +295,7 @@ function StaffNotifications() {
       setError("");
 
       const response = await fetch(
-        `${API}/api/staff/notifications/read-all/`,
+        `${API}/staff/notifications/read-all/`,
         {
           method: "POST",
           headers: {

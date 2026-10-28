@@ -17,7 +17,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-import { API } from "../../config";
+const API = "https://trustfound-backend.onrender.com/api";
 const SERVER_ORIGIN = "https://trustfound-backend.onrender.com";
 
 const DEFAULT_SETTINGS = {
@@ -31,13 +31,8 @@ const DEFAULT_SETTINGS = {
   primary_color: "#2563eb",
   secondary_color: "#0f172a",
   background_color: "#f8fafc",
-
-  // Background/fill inside bordered elements.
   border_color: "#ffffff",
-
-  // Actual border outline.
   border_line_color: "#e2e8f0",
-
   border_style: "solid",
   border_width: 1,
   logo: "",
@@ -84,7 +79,7 @@ function normalizeSettings(payload) {
     raw.border_width ?? DEFAULT_SETTINGS.border_width
   );
 
-  const settings = {
+  return {
     ...DEFAULT_SETTINGS,
     ...raw,
 
@@ -103,7 +98,6 @@ function normalizeSettings(payload) {
       DEFAULT_SETTINGS.background_color
     ),
 
-    // Keep the fill color separate from the outline color.
     border_color: normalizeColor(
       raw.border_color,
       DEFAULT_SETTINGS.border_color
@@ -132,8 +126,6 @@ function normalizeSettings(payload) {
       ? raw.template
       : DEFAULT_SETTINGS.template,
   };
-
-  return settings;
 }
 
 function getImageUrl(value) {
@@ -236,8 +228,7 @@ export default function LoginPage() {
     )}${cleanPath}`;
   };
 
-  // These pages use global routes and retain the company slug
-  // in the query string.
+  // Global signup route, retaining the company slug.
   const signupPath = companySlug
     ? `/signup-page?company=${encodeURIComponent(
         companySlug
@@ -252,7 +243,10 @@ export default function LoginPage() {
 
   const publicCompanyPath = companyRoute("");
 
-  // Load the company profile and its published website settings.
+  // Company-aware staff login route.
+  const staffLoginPath = companyRoute("/staff-login");
+
+  // Load company profile and published website settings.
   useEffect(() => {
     let cancelled = false;
 
@@ -309,8 +303,6 @@ export default function LoginPage() {
 
         setCompany(loadedCompany);
 
-        // If the company endpoint already contains settings,
-        // keep them available while the public settings load.
         const embeddedSettings =
           companyData?.settings ||
           companyData?.website_settings ||
@@ -318,11 +310,7 @@ export default function LoginPage() {
           companyData?.data?.website_settings;
 
         if (embeddedSettings) {
-          const normalized = normalizeSettings(
-            embeddedSettings
-          );
-
-          setSettings(normalized);
+          setSettings(normalizeSettings(embeddedSettings));
         }
 
         const settingsResponse = await fetch(
@@ -341,8 +329,6 @@ export default function LoginPage() {
             "The company website settings could not be loaded."
           );
 
-          // The public settings API returns 404 when a company
-          // has not published its website.
           if (settingsResponse.status === 404) {
             setWebsiteUnpublished(true);
 
@@ -361,12 +347,11 @@ export default function LoginPage() {
           throw new Error(errorMessage);
         }
 
-        const loadedSettings =
-          normalizeSettings(settingsData);
+        const loadedSettings = normalizeSettings(settingsData);
 
         setSettings(loadedSettings);
 
-        // Apply the saved website theme variables.
+        // Apply saved website theme variables.
         const root = document.documentElement;
 
         root.style.setProperty(
@@ -384,13 +369,11 @@ export default function LoginPage() {
           loadedSettings.background_color
         );
 
-        // Fill/background colour inside bordered elements.
         root.style.setProperty(
           "--company-border-color",
           loadedSettings.border_color
         );
 
-        // Colour of the actual border line.
         root.style.setProperty(
           "--company-border-line-color",
           loadedSettings.border_line_color
@@ -441,7 +424,7 @@ export default function LoginPage() {
     }
   };
 
-  // Submit login credentials.
+  // Submit customer login credentials.
   const handleSubmit = async (event) => {
     event.preventDefault();
     setFormError("");
@@ -489,47 +472,29 @@ export default function LoginPage() {
         );
       }
 
-      // Store the token formats used by the application.
+      // Store supported token formats.
       if (data.token) {
         localStorage.setItem("token", data.token);
       }
 
       if (data.access) {
         localStorage.setItem("access", data.access);
-        localStorage.setItem(
-          "access_token",
-          data.access
-        );
+        localStorage.setItem("access_token", data.access);
       }
 
       if (data.access_token) {
-        localStorage.setItem(
-          "access_token",
-          data.access_token
-        );
-        localStorage.setItem(
-          "access",
-          data.access_token
-        );
+        localStorage.setItem("access_token", data.access_token);
+        localStorage.setItem("access", data.access_token);
       }
 
       if (data.refresh) {
         localStorage.setItem("refresh", data.refresh);
-        localStorage.setItem(
-          "refresh_token",
-          data.refresh
-        );
+        localStorage.setItem("refresh_token", data.refresh);
       }
 
       if (data.refresh_token) {
-        localStorage.setItem(
-          "refresh_token",
-          data.refresh_token
-        );
-        localStorage.setItem(
-          "refresh",
-          data.refresh_token
-        );
+        localStorage.setItem("refresh_token", data.refresh_token);
+        localStorage.setItem("refresh", data.refresh_token);
       }
 
       if (data.user) {
@@ -548,15 +513,8 @@ export default function LoginPage() {
         );
       }
 
-      localStorage.setItem(
-        "companySlug",
-        companySlug
-      );
-
-      localStorage.setItem(
-        "company_slug",
-        companySlug
-      );
+      localStorage.setItem("companySlug", companySlug);
+      localStorage.setItem("company_slug", companySlug);
 
       navigate(companyRoute("/dashboard"), {
         replace: true,
@@ -581,14 +539,12 @@ export default function LoginPage() {
       company?.logo
   );
 
-  // Actual outline settings for bordered elements.
   const cardBorder = {
     borderColor: settings.border_line_color,
     borderStyle: settings.border_style,
     borderWidth: `${settings.border_width}px`,
   };
 
-  // Keep inputs readable while applying the configured outline.
   const inputStyle = {
     backgroundColor: "#ffffff",
     color: settings.secondary_color,
@@ -599,8 +555,7 @@ export default function LoginPage() {
   };
 
   const isMinimal = settings.template === "minimal";
-  const isProfessional =
-    settings.template === "professional";
+  const isProfessional = settings.template === "professional";
 
   const pageStyle = {
     backgroundColor: settings.background_color,
@@ -609,11 +564,9 @@ export default function LoginPage() {
     "--company-secondary": settings.secondary_color,
     "--company-background": settings.background_color,
     "--company-border-color": settings.border_color,
-    "--company-border-line-color":
-      settings.border_line_color,
+    "--company-border-line-color": settings.border_line_color,
     "--company-border-style": settings.border_style,
-    "--company-border-width":
-      `${settings.border_width}px`,
+    "--company-border-width": `${settings.border_width}px`,
   };
 
   // Loading screen.
@@ -638,7 +591,7 @@ export default function LoginPage() {
     );
   }
 
-  // Company not found or company profile unavailable.
+  // Company not found or profile unavailable.
   if (companyError || !company) {
     return (
       <div
@@ -659,9 +612,7 @@ export default function LoginPage() {
 
           <h1
             className="mt-5 text-2xl font-black"
-            style={{
-              color: settings.secondary_color,
-            }}
+            style={{ color: settings.secondary_color }}
           >
             Company Not Found
           </h1>
@@ -674,9 +625,7 @@ export default function LoginPage() {
           <Link
             to="/"
             className="mt-6 inline-flex items-center gap-2 rounded-xl px-5 py-3 font-bold text-white"
-            style={{
-              backgroundColor: settings.primary_color,
-            }}
+            style={{ backgroundColor: settings.primary_color }}
           >
             <ArrowLeft size={17} />
             Back to TrustFound
@@ -686,8 +635,7 @@ export default function LoginPage() {
     );
   }
 
-  // Do not present default theme values as saved settings when
-  // the backend confirms the public website is unpublished.
+  // Unpublished website screen.
   if (websiteUnpublished) {
     return (
       <main
@@ -709,9 +657,7 @@ export default function LoginPage() {
 
           <h1
             className="mt-5 text-2xl font-black"
-            style={{
-              color: settings.secondary_color,
-            }}
+            style={{ color: settings.secondary_color }}
           >
             Website Not Published
           </h1>
@@ -725,9 +671,7 @@ export default function LoginPage() {
           <Link
             to={publicCompanyPath}
             className="mt-6 inline-flex items-center gap-2 rounded-xl px-5 py-3 font-bold text-white"
-            style={{
-              backgroundColor: settings.primary_color,
-            }}
+            style={{ backgroundColor: settings.primary_color }}
           >
             <ArrowLeft size={17} />
             Back to {companyName}
@@ -789,9 +733,7 @@ export default function LoginPage() {
 
           <h1
             className="mt-5 text-2xl font-black sm:text-3xl"
-            style={{
-              color: settings.secondary_color,
-            }}
+            style={{ color: settings.secondary_color }}
           >
             {companyName}
           </h1>
@@ -821,9 +763,6 @@ export default function LoginPage() {
           }`}
           style={{
             ...cardBorder,
-
-            // border_color is the fill inside the border.
-            // border_line_color is the actual border outline.
             backgroundColor: settings.border_color,
           }}
         >
@@ -840,9 +779,7 @@ export default function LoginPage() {
 
             <h2
               className="text-3xl font-black"
-              style={{
-                color: settings.secondary_color,
-              }}
+              style={{ color: settings.secondary_color }}
             >
               Welcome Back
             </h2>
@@ -862,18 +799,13 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form
-            onSubmit={handleSubmit}
-            className="space-y-5"
-          >
+          <form onSubmit={handleSubmit} className="space-y-5">
             {/* Email */}
             <div>
               <label
                 htmlFor="email"
                 className="mb-2 block text-sm font-semibold"
-                style={{
-                  color: settings.secondary_color,
-                }}
+                style={{ color: settings.secondary_color }}
               >
                 Email Address
               </label>
@@ -910,9 +842,7 @@ export default function LoginPage() {
                 <label
                   htmlFor="password"
                   className="text-sm font-semibold"
-                  style={{
-                    color: settings.secondary_color,
-                  }}
+                  style={{ color: settings.secondary_color }}
                 >
                   Password
                 </label>
@@ -920,9 +850,7 @@ export default function LoginPage() {
                 <Link
                   to={forgotPasswordPath}
                   className="text-sm font-semibold hover:underline"
-                  style={{
-                    color: settings.primary_color,
-                  }}
+                  style={{ color: settings.primary_color }}
                 >
                   Forgot password?
                 </Link>
@@ -948,9 +876,7 @@ export default function LoginPage() {
               type="submit"
               disabled={loading}
               className="flex w-full items-center justify-center gap-2 rounded-xl px-5 py-4 font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-              style={{
-                backgroundColor: settings.primary_color,
-              }}
+              style={{ backgroundColor: settings.primary_color }}
             >
               {loading ? (
                 <>
@@ -969,18 +895,29 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Signup link */}
-          <div className="mt-7 text-center text-sm opacity-75">
-            Don&apos;t have an account?{" "}
-            <Link
-              to={signupPath}
-              className="font-bold hover:underline"
-              style={{
-                color: settings.primary_color,
-              }}
-            >
-              Sign Up
-            </Link>
+          {/* Signup and Staff Login links */}
+          <div className="mt-7 space-y-4 text-center text-sm">
+            <p className="opacity-75">
+              Don&apos;t have an account?{" "}
+              <Link
+                to={signupPath}
+                className="font-bold hover:underline"
+                style={{ color: settings.primary_color }}
+              >
+                Sign Up
+              </Link>
+            </p>
+
+            <p>
+              <Link
+                to={staffLoginPath}
+                className="inline-flex items-center justify-center gap-2 font-bold hover:underline"
+                style={{ color: settings.primary_color }}
+              >
+                <ShieldCheck size={17} />
+                Staff Login
+              </Link>
+            </p>
           </div>
         </section>
 

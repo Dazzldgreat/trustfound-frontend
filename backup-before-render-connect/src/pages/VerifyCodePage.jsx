@@ -33,24 +33,26 @@ function VerifyCodePage() {
       return;
     }
 
+    if (!code.trim()) {
+      alert("Please enter your verification code.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const response = await fetch(
-        `${API}/verify-code/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email,
-            code: code.trim(),
-            purpose,
-            company,
-          }),
-        }
-      );
+      const response = await fetch(`${API}/verify-code/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          code: code.trim(),
+          purpose,
+          company_slug: company,
+        }),
+      });
 
       const data = await response.json();
 
@@ -70,16 +72,24 @@ function VerifyCodePage() {
           );
         }
 
+        if (!data.user) {
+          throw new Error(
+            "Verification succeeded, but user information was not returned."
+          );
+        }
+
         localStorage.setItem("access", data.access);
         localStorage.setItem("refresh", data.refresh);
 
         localStorage.setItem(
           "user",
           JSON.stringify({
-            username: data.username,
-            name: data.name || "",
-            email: data.email,
-            role: data.role,
+            id: data.user.id,
+            username: data.user.username,
+            name: data.user.name || "",
+            email: data.user.email,
+            role: data.user.role,
+            company: data.company || null,
           })
         );
 
@@ -99,6 +109,8 @@ function VerifyCodePage() {
             companySlug: company,
           },
         });
+      } else {
+        alert(data.message || "Verification successful.");
       }
     } catch (error) {
       alert(error.message || "Verification failed.");
@@ -119,20 +131,17 @@ function VerifyCodePage() {
     setResending(true);
 
     try {
-      const response = await fetch(
-        `${API}/resend-code/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email,
-            purpose,
-            company,
-          }),
-        }
-      );
+      const response = await fetch(`${API}/resend-code/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          purpose,
+          company_slug: company,
+        }),
+      });
 
       const data = await response.json();
 
@@ -144,9 +153,13 @@ function VerifyCodePage() {
         );
       }
 
-      alert("Verification code sent again.");
+      alert(
+        data.message || "Verification code sent again."
+      );
     } catch (error) {
-      alert(error.message || "Failed to resend code.");
+      alert(
+        error.message || "Failed to resend code."
+      );
     } finally {
       setResending(false);
     }
@@ -172,6 +185,8 @@ function VerifyCodePage() {
 
         <input
           type="text"
+          inputMode="numeric"
+          autoComplete="one-time-code"
           placeholder="Enter verification code"
           value={code}
           onChange={(e) => setCode(e.target.value)}

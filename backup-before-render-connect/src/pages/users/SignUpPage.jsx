@@ -5,7 +5,7 @@ import {
     useNavigate,
 } from "react-router-dom";
 
-const API = "http://127.0.0.1:8000/api";
+const API = "https://trustfound-backend.onrender.com/api";
 
 const DEFAULT_SETTINGS = {
     primary_color: "#2563eb",

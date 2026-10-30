@@ -12,6 +12,10 @@ function VerifyCodePage() {
   const purpose =
     location.state?.purpose || "signup";
 
+  const company =
+    location.state?.companySlug ||
+    new URLSearchParams(location.search).get("company") ||
+    "";
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [resending, setResending] =
@@ -35,6 +39,7 @@ function VerifyCodePage() {
             email,
             code,
             purpose,
+            company,
           }),
         }
       );
@@ -110,6 +115,7 @@ function VerifyCodePage() {
             body: JSON.stringify({
               email,
               purpose,
+              company,
             }),
           }
         );

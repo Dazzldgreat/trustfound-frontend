@@ -926,26 +926,41 @@ export default function CompanyDashboard() {
         <main className="min-w-0 p-4 sm:p-6 lg:p-8">
           {/* MOBILE NAVIGATION */}
 
-          <div className="mb-6 flex gap-2 overflow-x-auto pb-2 lg:hidden">
-            {navItems.map((item) => {
-              const Icon = item.icon;
+          
+{/* MOBILE NAVIGATION */}
 
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold ${
-                    activeTab === item.id
-                      ? "bg-blue-600 text-white"
-                      : "border border-slate-200 bg-white text-slate-600"
-                  }`}
-                >
-                  <Icon size={16} />
-                  {item.label}
-                </button>
-              );
-            })}
-          </div>
+<div className="mb-6 flex gap-2 overflow-x-auto pb-2 lg:hidden">
+  {navItems.map((item) => {
+    const Icon = item.icon;
+
+    return (
+      <button
+        key={item.id}
+        onClick={() => setActiveTab(item.id)}
+        className={`flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold ${
+          activeTab === item.id
+            ? "bg-blue-600 text-white"
+            : "border border-slate-200 bg-white text-slate-600"
+        }`}
+      >
+        <Icon size={16} />
+        {item.label}
+      </button>
+    );
+  })}
+
+  {/* PUBLIC WEBSITE BUTTON */}
+  <button
+    type="button"
+    onClick={openPublicWebsite}
+    className="flex shrink-0 items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 hover:bg-blue-100"
+  >
+    <Globe size={16} />
+    Public Website
+    <ArrowRight size={15} />
+  </button>
+</div>
+
 
           {/* ALERTS */}
 

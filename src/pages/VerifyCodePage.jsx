@@ -9,9 +9,13 @@ function VerifyCodePage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const email = location.state?.email || "";
-  const purpose =
-    location.state?.purpose || "signup";
+ const email = location.state?.email || "";
+ const purpose = location.state?.purpose || "signup";
+
+const company =
+  location.state?.companySlug ||
+  new URLSearchParams(location.search).get("company") ||
+  "";
 
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -34,8 +38,9 @@ function VerifyCodePage() {
           },
           body: JSON.stringify({
             email,
-            code,
+            code: code.trim(),
             purpose,
+            company_slug: company,
           }),
         }
       );
@@ -51,27 +56,32 @@ function VerifyCodePage() {
       }
 
       // SIGNUP FLOW
+ if (purpose === "signup") {
+  if (!data.access || !data.refresh || !data.user) {
+    throw new Error(
+      "Verification succeeded, but user information or login tokens were not returned."
+    );
+  }
 
-    if (purpose === "signup") {
+  localStorage.setItem("access", data.access);
+  localStorage.setItem("refresh", data.refresh);
 
-      localStorage.setItem("access", data.access);
-      localStorage.setItem("refresh", data.refresh);
+  localStorage.setItem(
+    "user",
+    JSON.stringify({
+      id: data.user.id,
+      username: data.user.username,
+      name: data.user.name || "",
+      email: data.user.email,
+      role: data.user.role,
+      company: data.company || null,
+    })
+  );
 
-      localStorage.setItem(
-      "user",
-      JSON.stringify({
-      username: data.username,
-      name: data.name || "",
-      email: data.email,
-      role: data.role,
-      })
-      );
+  alert("Account verified successfully!");
 
-      alert("Account verified successfully!");
-
-      navigate("/dashboard", { replace: true });
-    }
-
+  navigate("/dashboard", { replace: true });
+}
       // FORGOT PASSWORD FLOW
       if (
         purpose === "forgot-password"
@@ -108,10 +118,11 @@ function VerifyCodePage() {
               "Content-Type":
                 "application/json",
             },
-            body: JSON.stringify({
-              email,
-              purpose,
-            }),
+           body: JSON.stringify({
+             email,
+             purpose,
+             company_slug: company,
+           }),
           }
         );
 

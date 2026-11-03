@@ -80,7 +80,12 @@ const company =
 
   alert("Account verified successfully!");
 
-  navigate("/dashboard", { replace: true });
+  navigate(
+  `/company/${encodeURIComponent(
+    data.company?.slug || company
+  )}/dashboard`,
+  { replace: true }
+);
 }
       // FORGOT PASSWORD FLOW
       if (

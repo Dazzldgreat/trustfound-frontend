@@ -52,6 +52,7 @@ import RecoverItem from "./pages/RecoverItem";
 ============================================================ */
 
 import StaffLoginPage from "./pages/StaffLoginPage";
+import StaffVerifyPage from "./pages/StaffVerifyPage";
 import StaffDashboard from "./pages/StaffDashboard";
 import StaffQRScanner from "./pages/StaffQRScanner";
 import StaffVerificationSuccess from "./pages/StaffVerificationSuccess";
@@ -198,6 +199,11 @@ function App() {
                 <Route
                     path="/company/:companySlug/staff-login"
                     element={<StaffLoginPage />}
+                />
+
+                <Route
+                    path="/company/:companySlug/staff-verify"
+                    element={<StaffVerifyPage />}
                 />
 
 

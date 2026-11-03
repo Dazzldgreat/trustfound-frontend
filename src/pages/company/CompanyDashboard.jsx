@@ -467,7 +467,8 @@ export default function CompanyDashboard() {
       }
 
       setMessage(
-        result.message || "Staff account created successfully."
+        result.message ||
+          "Staff account created. A verification email has been sent. The staff member must verify their email before logging in."
       );
 
       setStaffForm({

@@ -120,6 +120,12 @@ function StaffFoundItemDetail() {
   const [error, setError] =
     useState("");
 
+  const [verifying, setVerifying] =
+    useState(false);
+
+  const [verificationError, setVerificationError] =
+    useState("");
+
 
   // ==========================================================
   // AUTH CHECK
@@ -272,6 +278,70 @@ function StaffFoundItemDetail() {
       companyRoute,
     ]
   );
+
+
+  // ==========================================================
+  // VERIFY FOUND ITEM
+  // ==========================================================
+
+  const handleVerifyItem = async () => {
+
+    if (!item?.verification_token) {
+      setVerificationError(
+        "Verification token is missing. Please refresh the page."
+      );
+      return;
+    }
+
+    if (!window.confirm(
+      "Are you sure you want to verify this found item?"
+    )) {
+      return;
+    }
+
+    try {
+
+      setVerifying(true);
+      setVerificationError("");
+
+      const response = await fetch(
+        `${API}/staff/verify-found-item/${item.verification_token}/`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${access}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+          data.detail ||
+          data.message ||
+          "Item verification failed."
+        );
+      }
+
+      await fetchItem();
+
+    } catch (error) {
+
+      console.error("ITEM VERIFICATION ERROR:", error);
+
+      setVerificationError(
+        error.message || "Unable to verify this item."
+      );
+
+    } finally {
+
+      setVerifying(false);
+
+    }
+
+  };
 
 
   // ==========================================================
@@ -781,6 +851,31 @@ function StaffFoundItemDetail() {
                   </span>
 
                 </div>
+
+                {item.status === "Pending" && (
+
+                  <div className="pt-5">
+
+                    {verificationError && (
+                      <p className="text-red-600 text-sm mb-3">
+                        {verificationError}
+                      </p>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={handleVerifyItem}
+                      disabled={verifying}
+                      className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-xl transition"
+                    >
+                      {verifying
+                        ? "Verifying Item..."
+                        : "Verify Item"}
+                    </button>
+
+                  </div>
+
+                )}
 
               </div>
 

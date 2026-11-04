@@ -13,7 +13,7 @@ import {
     Building2,
 } from "lucide-react";
 
-import { API_BASE_URL as API } from "../config";
+import { API } from "../config";
 
 function StaffMatches() {
     const navigate = useNavigate();

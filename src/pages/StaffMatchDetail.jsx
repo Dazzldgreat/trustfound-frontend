@@ -2,7 +2,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 
-import { API_BASE_URL as API } from "../config";
+import { API } from "../config";
 
 function StaffMatchDetail() {
   const { id, companySlug } = useParams();

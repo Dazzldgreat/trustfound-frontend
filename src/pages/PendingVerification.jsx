@@ -941,7 +941,7 @@ function PendingVerification() {
                                                 onClick={() =>
                                                     navigate(
                                                         companyRoute(
-                                                            `/staff/verify-found-item/${item.id}`
+                                                            `/staff/found-item/${item.id}`
                                                         )
                                                     )
                                                 }

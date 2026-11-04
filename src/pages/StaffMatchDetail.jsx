@@ -75,7 +75,9 @@ function StaffMatchDetail() {
       return image;
     }
 
-    return `${API}${image.startsWith("/") ? image : `/${image}`}`;
+    const backendOrigin = API.replace(/\/api\/?$/, "");
+
+    return `${backendOrigin}${image.startsWith("/") ? image : `/${image}`}`;
   };
 
   // ============================================================
@@ -580,12 +582,15 @@ function StaffMatchDetail() {
                 }
                 className="w-full h-72 object-cover rounded-lg mb-5"
                 onError={(event) => {
-                  event.currentTarget.style.display =
-                    "none";
+                  event.currentTarget.style.display = "none";
+                  const fallback = event.currentTarget.nextElementSibling;
+                  if (fallback) {
+                    fallback.style.display = "flex";
+                  }
                 }}
               />
             ) : (
-              <div className="w-full h-72 bg-gray-100 rounded-lg mb-5 flex items-center justify-center text-gray-400">
+              <div style={{ display: "none" }} className="w-full h-72 bg-gray-100 rounded-lg mb-5 flex items-center justify-center text-gray-400">
                 No image available
               </div>
             )}
@@ -643,12 +648,15 @@ function StaffMatchDetail() {
                 }
                 className="w-full h-72 object-cover rounded-lg mb-5"
                 onError={(event) => {
-                  event.currentTarget.style.display =
-                    "none";
+                  event.currentTarget.style.display = "none";
+                  const fallback = event.currentTarget.nextElementSibling;
+                  if (fallback) {
+                    fallback.style.display = "flex";
+                  }
                 }}
               />
             ) : (
-              <div className="w-full h-72 bg-gray-100 rounded-lg mb-5 flex items-center justify-center text-gray-400">
+              <div style={{ display: "none" }} className="w-full h-72 bg-gray-100 rounded-lg mb-5 flex items-center justify-center text-gray-400">
                 No image available
               </div>
             )}

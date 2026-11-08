@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { API } from "../../config";
+import { upgradeLegacyColor } from "../../theme";
 const DEFAULT_WEBSITE_SETTINGS = {
   primary_color: "#EA580C",
   secondary_color: "#C2410C",
@@ -60,6 +61,7 @@ function isValidColor(value) {
 }
 
 function getValidColor(value, fallback) {
+    value = upgradeLegacyColor(value);
   return isValidColor(value) ? value : fallback;
 }
 

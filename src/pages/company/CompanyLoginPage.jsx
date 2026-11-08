@@ -165,51 +165,51 @@ export default function CompanyLoginPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-6 py-12">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-cream px-6 py-12">
       {/* Background */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -left-40 -top-40 h-[500px] w-[500px] rounded-full bg-primary/20 blur-[140px]" />
-        <div className="absolute bottom-0 right-0 h-[500px] w-[500px] rounded-full bg-cyan-500/10 blur-[140px]" />
+        <div className="absolute -left-40 -top-40 h-[500px] w-[500px] rounded-full bg-orange-200/60 blur-[140px]" />
+        <div className="absolute bottom-0 right-0 h-[500px] w-[500px] rounded-full bg-orange-100 blur-[140px]" />
       </div>
 
       <div className="relative grid w-full max-w-6xl items-center gap-12 lg:grid-cols-2">
         {/* Left side */}
         <div className="hidden lg:block">
-          <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2">
-            <ShieldCheck size={18} className="text-emerald-400" />
-            <span className="text-sm font-semibold text-white">
+          <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-100 px-4 py-2">
+            <ShieldCheck size={18} className="text-primary" />
+            <span className="text-sm font-semibold text-graphite">
               Secure Company Portal
             </span>
           </div>
 
-          <h1 className="text-5xl font-black leading-tight text-white xl:text-6xl">
+          <h1 className="text-5xl font-black leading-tight text-graphite xl:text-6xl">
             Manage your
-            <span className="block bg-gradient-to-r from-primary to-cyan-400 bg-clip-text text-transparent">
+            <span className="block text-primary">
               Lost &amp; Found
             </span>
             system.
           </h1>
 
-          <p className="mt-6 max-w-lg text-lg leading-8 text-slate-400">
+          <p className="mt-6 max-w-lg text-lg leading-8 text-stone-500">
             Sign in to your company&apos;s TrustFound workspace to
             manage staff, lost items, found items, matches and
             recoveries.
           </p>
 
           <div className="mt-10 grid grid-cols-3 gap-4">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-              <p className="text-2xl font-black text-white">AI</p>
-              <p className="mt-1 text-sm text-slate-400">Matching</p>
+            <div className="rounded-2xl border border-stone-200 bg-white shadow-sm p-5">
+              <p className="text-2xl font-black text-graphite">AI</p>
+              <p className="mt-1 text-sm text-stone-500">Matching</p>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-              <p className="text-2xl font-black text-white">24/7</p>
-              <p className="mt-1 text-sm text-slate-400">Tracking</p>
+            <div className="rounded-2xl border border-stone-200 bg-white shadow-sm p-5">
+              <p className="text-2xl font-black text-graphite">24/7</p>
+              <p className="mt-1 text-sm text-stone-500">Tracking</p>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-              <p className="text-2xl font-black text-white">🔐</p>
-              <p className="mt-1 text-sm text-slate-400">Secure</p>
+            <div className="rounded-2xl border border-stone-200 bg-white shadow-sm p-5">
+              <p className="text-2xl font-black text-graphite">🔐</p>
+              <p className="mt-1 text-sm text-stone-500">Secure</p>
             </div>
           </div>
         </div>
@@ -218,7 +218,7 @@ export default function CompanyLoginPage() {
         <div className="mx-auto w-full max-w-md">
           <div className="rounded-3xl bg-white p-8 shadow-2xl dark:bg-slate-900 md:p-10">
             <div className="mb-6 flex justify-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-blue-500 shadow-lg">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary shadow-lg">
                 <Building2 size={30} className="text-white" />
               </div>
             </div>
@@ -283,7 +283,7 @@ export default function CompanyLoginPage() {
                   </label>
 
                   <Link
-                    to="/company-forgot-password"
+                    to="/company/forgot-password"
                     className="text-sm font-semibold text-primary hover:underline"
                   >
                     Forgot password?

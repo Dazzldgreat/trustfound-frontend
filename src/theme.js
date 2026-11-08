@@ -49,6 +49,55 @@ export const DEFAULT_WEBSITE_SETTINGS = {
 };
 
 /* ============================================================
+   LEGACY DEFAULT COLOURS
+   Companies created before the Orange & Graphite palette still
+   have the old blue/slate defaults saved. Those exact values are
+   shown as the new brand colours instead. (The backend migration
+   0012 converts them permanently in the database.)
+============================================================ */
+
+const LEGACY_COLOURS = {
+    "#2563eb": BRAND.primary, // old primary blue
+    "#4f46e5": BRAND.primary, // old indigo primary
+    "#1d4ed8": BRAND.primaryDark, // old dark blue
+    "#0f172a": BRAND.graphite, // old slate secondary
+    "#111827": BRAND.graphite,
+    "#f8fafc": BRAND.background, // old page background
+    "#f8fbfb": BRAND.background,
+    "#e2e8f0": BRAND.border, // old border line
+    "#cbd5e1": "#D6CEC6",
+};
+
+export function upgradeLegacyColor(value) {
+    if (typeof value !== "string") return value;
+
+    return LEGACY_COLOURS[value.trim().toLowerCase()] || value;
+}
+
+const COLOUR_FIELDS = [
+    "primary_color",
+    "secondary_color",
+    "background_color",
+    "border_color",
+    "border_line_color",
+];
+
+/** Returns a copy of a settings object with legacy colours upgraded. */
+export function upgradeLegacySettings(settings) {
+    if (!settings || typeof settings !== "object") return settings;
+
+    const upgraded = { ...settings };
+
+    COLOUR_FIELDS.forEach((field) => {
+        if (field in upgraded) {
+            upgraded[field] = upgradeLegacyColor(upgraded[field]);
+        }
+    });
+
+    return upgraded;
+}
+
+/* ============================================================
    COLOUR HELPERS
 ============================================================ */
 
@@ -116,11 +165,30 @@ export function resolveMediaUrl(value) {
     const doubled = url.match(/^(https?:\/\/[^/]+)(https?:\/\/.+)$/i);
     if (doubled) url = doubled[2];
 
-    if (
-        /^(https?:)?\/\//i.test(url) ||
-        url.startsWith("data:") ||
-        url.startsWith("blob:")
-    ) {
+    if (url.startsWith("data:") || url.startsWith("blob:")) {
+        return url;
+    }
+
+    if (/^(https?:)?\/\//i.test(url)) {
+        // Django behind Render's proxy builds http:// links; an https
+        // page would block them as mixed content, so upgrade links that
+        // point at our own backend.
+        try {
+            const parsed = new URL(url, window.location.href);
+            const api = new URL(API_BASE_URL);
+
+            if (
+                parsed.protocol === "http:" &&
+                api.protocol === "https:" &&
+                parsed.host === api.host
+            ) {
+                parsed.protocol = "https:";
+                return parsed.toString();
+            }
+        } catch {
+            // Not a parseable URL: return it unchanged.
+        }
+
         return url;
     }
 

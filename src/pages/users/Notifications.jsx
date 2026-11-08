@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import { API } from "../../config";
+import { upgradeLegacyColor } from "../../theme";
 const DEFAULT_WEBSITE_SETTINGS = {
     primary_color: "#EA580C",
     secondary_color: "#C2410C",
@@ -55,6 +56,7 @@ function getStoredObject(key) {
 // ============================================================
 
 function getValidColor(value, fallback) {
+    value = upgradeLegacyColor(value);
     if (typeof value !== "string") {
         return fallback;
     }

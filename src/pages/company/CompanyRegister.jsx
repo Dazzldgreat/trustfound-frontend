@@ -134,7 +134,7 @@ export default function CompanyRegister() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center px-6 py-12">
+    <div className="min-h-screen bg-cream flex items-center justify-center px-6 py-12">
 
       {/* BACKGROUND */}
 
@@ -159,17 +159,17 @@ export default function CompanyRegister() {
             className="inline-flex items-center gap-3"
           >
 
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-blue-500 flex items-center justify-center text-white font-black text-xl shadow-lg">
+            <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center text-white font-black text-xl shadow-lg">
               LF
             </div>
 
             <div className="text-left">
 
-              <h1 className="text-xl font-black text-white">
+              <h1 className="text-xl font-black text-graphite">
                 LostFound
               </h1>
 
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-stone-500">
                 AI Recovery Platform
               </p>
 
@@ -191,24 +191,24 @@ export default function CompanyRegister() {
 
           <div className="hidden lg:block">
 
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/10 mb-8">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-100 border border-orange-200 mb-8">
 
               <Building2
                 size={18}
                 className="text-primary"
               />
 
-              <span className="text-white text-sm font-semibold">
+              <span className="text-graphite text-sm font-semibold">
                 Organization Registration
               </span>
 
             </div>
 
-            <h2 className="text-5xl xl:text-6xl font-black text-white leading-tight">
+            <h2 className="text-5xl xl:text-6xl font-black text-graphite leading-tight">
 
               Bring your
 
-              <span className="block bg-gradient-to-r from-primary to-cyan-400 bg-clip-text text-transparent">
+              <span className="block text-primary">
                 Lost & Found
               </span>
 
@@ -216,7 +216,7 @@ export default function CompanyRegister() {
 
             </h2>
 
-            <p className="mt-6 text-lg text-slate-400 leading-8 max-w-lg">
+            <p className="mt-6 text-lg text-stone-500 leading-8 max-w-lg">
 
               Create your organization's LostFound
               workspace and give your staff one secure
@@ -227,37 +227,37 @@ export default function CompanyRegister() {
 
             <div className="mt-10 grid grid-cols-3 gap-4">
 
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+              <div className="bg-white border border-stone-200 shadow-sm rounded-2xl p-5">
 
-                <p className="text-2xl font-black text-white">
+                <p className="text-2xl font-black text-graphite">
                   AI
                 </p>
 
-                <p className="text-sm text-slate-400 mt-1">
+                <p className="text-sm text-stone-500 mt-1">
                   Matching
                 </p>
 
               </div>
 
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+              <div className="bg-white border border-stone-200 shadow-sm rounded-2xl p-5">
 
-                <p className="text-2xl font-black text-white">
+                <p className="text-2xl font-black text-graphite">
                   🔐
                 </p>
 
-                <p className="text-sm text-slate-400 mt-1">
+                <p className="text-sm text-stone-500 mt-1">
                   Secure
                 </p>
 
               </div>
 
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+              <div className="bg-white border border-stone-200 shadow-sm rounded-2xl p-5">
 
-                <p className="text-2xl font-black text-white">
+                <p className="text-2xl font-black text-graphite">
                   24/7
                 </p>
 
-                <p className="text-sm text-slate-400 mt-1">
+                <p className="text-sm text-stone-500 mt-1">
                   Tracking
                 </p>
 
@@ -281,7 +281,7 @@ export default function CompanyRegister() {
 
                 <div className="flex justify-center mb-5">
 
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-blue-500 flex items-center justify-center shadow-lg">
+                  <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center shadow-lg">
 
                     <Building2
                       size={30}
@@ -549,7 +549,7 @@ export default function CompanyRegister() {
 
               <Link
                 to="/"
-                className="text-sm text-slate-400 hover:text-white"
+                className="text-sm text-slate-400 hover:text-primary"
               >
                 ← Back to LostFound
               </Link>

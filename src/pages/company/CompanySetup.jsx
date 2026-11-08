@@ -230,30 +230,30 @@ export default function CompanySetup() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center px-6 py-12">
+    <div className="min-h-screen bg-cream flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-3xl">
         {/* HEADER */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-3">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-blue-500 flex items-center justify-center text-white font-black text-xl">
+            <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center text-white font-black text-xl">
               LF
             </div>
 
             <div className="text-left">
-              <h1 className="text-xl font-black text-white">
+              <h1 className="text-xl font-black text-graphite">
                 LostFound
               </h1>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-stone-500">
                 AI Recovery Platform
               </p>
             </div>
           </div>
 
-          <h2 className="text-3xl md:text-4xl font-black text-white mt-8">
+          <h2 className="text-3xl md:text-4xl font-black text-graphite mt-8">
             Set Up Your Organization
           </h2>
 
-          <p className="text-slate-400 mt-3 max-w-xl mx-auto">
+          <p className="text-stone-500 mt-3 max-w-xl mx-auto">
             Add your organization&apos;s information so it can
             appear throughout the LostFound platform.
           </p>
@@ -300,7 +300,7 @@ export default function CompanySetup() {
                     className="block w-full text-sm text-slate-500"
                   />
 
-                  <p className="text-xs text-slate-400 mt-2">
+                  <p className="text-xs text-stone-500 mt-2">
                     PNG, JPG or WebP recommended.
                   </p>
                 </div>

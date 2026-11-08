@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Menu, Bell, ChevronDown } from "lucide-react";
 
 import { API as API_BASE_URL } from "../../config";
+import { upgradeLegacyColor } from "../../theme";
 
 const DEFAULT_SETTINGS = {
     primary_color: "#EA580C",
@@ -26,6 +27,7 @@ function getStoredObject(key) {
 }
 
 function getValidColor(value, fallback) {
+    value = upgradeLegacyColor(value);
     return typeof value === "string" && HEX_COLOR_REGEX.test(value.trim())
         ? value.trim()
         : fallback;

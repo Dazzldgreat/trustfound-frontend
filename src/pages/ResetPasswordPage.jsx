@@ -11,6 +11,7 @@ import {
 // ============================================================
 
 import { API } from "../config";
+import PasswordInput from "../component/PasswordInput";
 // ============================================================
 // GET STORED OBJECT
 // ============================================================
@@ -255,10 +256,11 @@ function ResetPasswordPage() {
             NEW PASSWORD
         ==================================================== */}
 
-        <input
-          type="password"
+        <PasswordInput
+          wrapperClassName="mb-4"
           placeholder="New Password"
-          className="w-full border p-4 rounded-xl mb-4"
+          autoComplete="new-password"
+          className="w-full border p-4 rounded-xl"
           value={newPassword}
           onChange={(e) =>
             setNewPassword(
@@ -273,9 +275,9 @@ function ResetPasswordPage() {
             CONFIRM PASSWORD
         ==================================================== */}
 
-        <input
-          type="password"
+        <PasswordInput
           placeholder="Confirm Password"
+          autoComplete="new-password"
           className="w-full border p-4 rounded-xl"
           value={confirmPassword}
           onChange={(e) =>

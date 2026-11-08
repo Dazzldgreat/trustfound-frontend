@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 
 import { API } from "../config";
+import { upgradeLegacyColor } from "../theme";
 const DEFAULT_SETTINGS = {
   primary_color: "#EA580C",
   secondary_color: "#57534E",
@@ -56,6 +57,7 @@ function buildCompanyRoute(companySlug, path = "") {
 }
 
 function normalizeColor(value, fallback) {
+    value = upgradeLegacyColor(value);
   if (typeof value !== "string" || !value.trim()) {
     return fallback;
   }

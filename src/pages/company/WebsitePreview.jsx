@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { API } from "../../config";
+import { upgradeLegacySettings } from "../../theme";
 const DEFAULT_SETTINGS = {
     hero_title: "Lost Something? Find It Here.",
     hero_subtitle:
@@ -105,7 +106,7 @@ function WebsitePreview() {
 
                 setSettings({
                     ...DEFAULT_SETTINGS,
-                    ...(data.settings ||
+                    ...upgradeLegacySettings(data.settings ||
                         data.website_settings ||
                         data),
                 });

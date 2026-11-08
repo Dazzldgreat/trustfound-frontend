@@ -20,10 +20,7 @@ import {
 } from "lucide-react";
 
 import { API } from "../../config";
-import {
-  DEFAULT_WEBSITE_SETTINGS,
-  resolveMediaUrl,
-} from "../../theme";
+import { DEFAULT_WEBSITE_SETTINGS, resolveMediaUrl, upgradeLegacyColor } from "../../theme";
 
 // ============================================================
 // TRUSTFOUND DEFAULT SETTINGS
@@ -52,6 +49,7 @@ function getStoredObject(key) {
 // ============================================================
 
 function normalizeColor(value, fallback) {
+    value = upgradeLegacyColor(value);
   return typeof value === "string" &&
     /^#[0-9a-fA-F]{6}$/.test(value)
     ? value

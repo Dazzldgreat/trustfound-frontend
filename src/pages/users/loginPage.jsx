@@ -14,7 +14,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { API } from "../../config";
-import { BRAND, resolveMediaUrl } from "../../theme";
+import { BRAND, resolveMediaUrl, upgradeLegacyColor } from "../../theme";
 import AuthLayout, {
   AuthAlert,
   AuthField,
@@ -54,6 +54,7 @@ function getStoredObject(key) {
 }
 
 function normalizeColor(value, fallback) {
+    value = upgradeLegacyColor(value);
   return typeof value === "string" &&
     /^#[0-9a-fA-F]{6}$/.test(value)
     ? value

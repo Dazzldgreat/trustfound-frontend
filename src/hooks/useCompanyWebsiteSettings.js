@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 import { API } from "../config";
+import { upgradeLegacySettings } from "../theme";
 const DEFAULT_SETTINGS = {
     hero_title: "Lost Something? Find It Here.",
     hero_subtitle:
@@ -90,7 +91,7 @@ export default function useCompanyWebsiteSettings() {
                 setCompany(data.company || {});
                 setSettings({
                     ...DEFAULT_SETTINGS,
-                    ...(data.settings || data.website_settings || {}),
+                    ...upgradeLegacySettings(data.settings || data.website_settings || {}),
                 });
             } catch (err) {
                 if (!cancelled) {

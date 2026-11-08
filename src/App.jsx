@@ -13,6 +13,7 @@ import {
 import CompanyDashboard from "./pages/company/CompanyDashboard";
 import CompanyRegister from "./pages/company/CompanyRegister";
 import CompanyLoginPage from "./pages/company/CompanyLoginPage";
+import CompanyForgotPassword from "./pages/company/CompanyForgotPassword";
 import CompanyVerifyCodePage from "./pages/company/CompanyVerifyCodePage";
 import CompanySetup from "./pages/company/CompanySetup";
 import CompanyPublicPage from "./pages/company/CompanyPublicPage";
@@ -134,6 +135,11 @@ function App() {
                 <Route
                     path="/company/login"
                     element={<CompanyLoginPage />}
+                />
+
+                <Route
+                    path="/company/forgot-password"
+                    element={<CompanyForgotPassword />}
                 />
 
                 <Route

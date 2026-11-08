@@ -1,7 +1,31 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
+import { ArrowRight, Hash, KeyRound, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
+
 import { API } from "../config";
+import { BRAND, resolveMediaUrl, withAlpha, upgradeLegacyColor } from "../theme";
+import AuthLayout, {
+  AuthAlert,
+  AuthField,
+  AuthHeading,
+  AuthMessage,
+  AuthSubmit,
+} from "../component/auth/AuthLayout";
+
+const DEFAULT_THEME = {
+  primary_color: BRAND.primary,
+  secondary_color: BRAND.graphite,
+  background_color: BRAND.background,
+};
+
+function pickColor(value, fallback) {
+    value = upgradeLegacyColor(value);
+  return typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value.trim())
+    ? value.trim()
+    : fallback;
+}
+
 function StaffLoginPage() {
   const navigate = useNavigate();
   const params = useParams();
@@ -75,6 +99,36 @@ function StaffLoginPage() {
   // ============================================================
 
   const [activePanel, setActivePanel] = useState("login");
+
+  // ============================================================
+  // COMPANY THEME (optional: falls back to Orange & Graphite)
+  // ============================================================
+
+  const [theme, setTheme] = useState(DEFAULT_THEME);
+
+  useEffect(() => {
+    if (!slug) return undefined;
+
+    let cancelled = false;
+
+    fetch(`${API}/company/public/${encodeURIComponent(slug)}/website/`)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        const source = data?.settings || data?.website_settings;
+        if (!source || cancelled) return;
+
+        setTheme({
+          primary_color: pickColor(source.primary_color, DEFAULT_THEME.primary_color),
+          secondary_color: pickColor(source.secondary_color, DEFAULT_THEME.secondary_color),
+          background_color: pickColor(source.background_color, DEFAULT_THEME.background_color),
+        });
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
 
   // ============================================================
   // LOAD COMPANY
@@ -641,90 +695,98 @@ function StaffLoginPage() {
   };
 
   // ============================================================
+  // THEME + MESSAGE TONE
+  // ============================================================
+
+  const primary = theme.primary_color;
+
+  // Messages share one state per panel; pick green for success.
+  const toneOf = (message) =>
+    /success|sent|changed|reset\b|verified/i.test(message || "") &&
+    !/unable|invalid|expired|error|failed|not /i.test(message || "")
+      ? "success"
+      : "error";
+
+  const linkButton =
+    "w-full rounded-xl px-4 py-3 text-sm font-semibold text-stone-600 transition hover:bg-stone-50 hover:text-graphite";
+
+  // ============================================================
   // LOGIN PANEL
   // ============================================================
 
   const renderLogin = () => (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-5"
-    >
+    <>
+      <AuthHeading
+        title="Staff sign in"
+        subtitle={`Access the ${company?.name || "company"} staff portal`}
+      />
 
-      <div>
-        <label className="block font-semibold mb-2">
-          Gmail / Email
-        </label>
+      <AuthAlert>{loginMessage}</AuthAlert>
 
-        <input
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <AuthField
+          id="email"
+          label="Email"
+          icon={Mail}
           type="email"
-          name="email"
           value={loginForm.email}
           onChange={handleLoginChange}
           required
           autoComplete="email"
-          className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none"
-          placeholder="staff@gmail.com"
+          placeholder="staff@company.com"
+          primary={primary}
         />
-      </div>
 
-      <div>
-        <label className="block font-semibold mb-2">
-          Password
-        </label>
-
-        <input
+        <AuthField
+          id="password"
+          label="Password"
+          icon={LockKeyhole}
           type="password"
-          name="password"
           value={loginForm.password}
           onChange={handleLoginChange}
           required
           autoComplete="current-password"
-          className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none"
-          placeholder="••••••••"
+          placeholder="Enter your password"
+          primary={primary}
+          action={
+            <button
+              type="button"
+              onClick={() => {
+                setForgotEmail(loginForm.email);
+                setForgotMessage("");
+                setActivePanel("forgot");
+              }}
+              className="text-sm font-semibold hover:underline"
+              style={{ color: primary }}
+            >
+              Forgot password?
+            </button>
+          }
         />
-      </div>
 
-      {loginMessage && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm">
-          {loginMessage}
+        <div className="pt-2">
+          <AuthSubmit
+            loading={loginLoading}
+            loadingText="Signing in..."
+            primary={primary}
+          >
+            Sign in
+            <ArrowRight size={18} />
+          </AuthSubmit>
         </div>
-      )}
+      </form>
 
-      <button
-        type="submit"
-        disabled={loginLoading}
-        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white py-4 rounded-xl font-bold transition"
-      >
-        {loginLoading
-          ? "Signing In..."
-          : "Sign In"}
-      </button>
-
-      <button
-        type="button"
-        onClick={() => {
-          setForgotEmail(
-            loginForm.email
-          );
-          setForgotMessage("");
-          setActivePanel("forgot");
-        }}
-        className="w-full text-blue-600 hover:text-blue-800 font-semibold"
-      >
-        Forgot Password?
-      </button>
-
-      <button
-        type="button"
-        onClick={() =>
-          setActivePanel("change")
-        }
-        className="w-full border border-gray-200 text-gray-600 hover:bg-gray-50 py-3 rounded-xl font-semibold"
-      >
-        Change Password
-      </button>
-
-    </form>
+      <div className="mt-6 border-t border-stone-100 pt-5">
+        <button
+          type="button"
+          onClick={() => setActivePanel("change")}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-stone-200 px-4 py-3 text-sm font-semibold text-graphite transition hover:border-stone-300 hover:bg-stone-50"
+        >
+          <KeyRound size={17} style={{ color: primary }} />
+          Change password
+        </button>
+      </div>
+    </>
   );
 
   // ============================================================
@@ -732,70 +794,56 @@ function StaffLoginPage() {
   // ============================================================
 
   const renderForgot = () => (
-    <form
-      onSubmit={handleForgotPassword}
-      className="space-y-5"
-    >
+    <>
+      <AuthHeading
+        title="Forgot password"
+        subtitle="Enter your staff email and we'll send you a 6-digit code."
+      />
 
-      <div>
-        <h2 className="text-2xl font-black text-gray-900">
-          Forgot Password
-        </h2>
+      <AuthAlert tone={toneOf(forgotMessage)}>{forgotMessage}</AuthAlert>
 
-        <p className="text-gray-500 mt-2">
-          Enter your staff Gmail or email
-          address and we will send you a
-          verification code.
-        </p>
-      </div>
-
-      <div>
-        <label className="block font-semibold mb-2">
-          Gmail / Email
-        </label>
-
-        <input
+      <form onSubmit={handleForgotPassword} className="space-y-4">
+        <AuthField
+          id="forgot-email"
+          name="forgot-email"
+          label="Email"
+          icon={Mail}
           type="email"
           value={forgotEmail}
-          onChange={(e) =>
-            setForgotEmail(
-              e.target.value
-            )
-          }
+          onChange={(e) => setForgotEmail(e.target.value)}
           required
           autoComplete="email"
-          className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none"
-          placeholder="staff@gmail.com"
+          placeholder="staff@company.com"
+          primary={primary}
         />
-      </div>
 
-      {forgotMessage && (
-        <div className="bg-blue-50 border border-blue-200 text-blue-700 rounded-xl p-4 text-sm">
-          {forgotMessage}
+        <div className="pt-2">
+          <AuthSubmit
+            loading={forgotLoading}
+            loadingText="Sending code..."
+            primary={primary}
+          >
+            Send reset code
+          </AuthSubmit>
         </div>
-      )}
 
-      <button
-        type="submit"
-        disabled={forgotLoading}
-        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white py-4 rounded-xl font-bold"
-      >
-        {forgotLoading
-          ? "Sending Code..."
-          : "Send Reset Code"}
-      </button>
+        <button
+          type="button"
+          onClick={() => setActivePanel("reset")}
+          className={linkButton}
+        >
+          I already have a code
+        </button>
 
-      <button
-        type="button"
-        onClick={() =>
-          setActivePanel("login")
-        }
-        className="w-full text-gray-500 font-semibold"
-      >
-        Back to Login
-      </button>
-
-    </form>
+        <button
+          type="button"
+          onClick={() => setActivePanel("login")}
+          className={linkButton}
+        >
+          ← Back to sign in
+        </button>
+      </form>
+    </>
   );
 
   // ============================================================
@@ -803,114 +851,86 @@ function StaffLoginPage() {
   // ============================================================
 
   const renderReset = () => (
-    <form
-      onSubmit={handleResetPassword}
-      className="space-y-5"
-    >
+    <>
+      <AuthHeading
+        title="Reset password"
+        subtitle="Enter the 6-digit code from your email and choose a new password."
+      />
 
-      <div>
-        <h2 className="text-2xl font-black text-gray-900">
-          Reset Staff Password
-        </h2>
+      <AuthAlert tone={toneOf(resetMessage)}>{resetMessage}</AuthAlert>
 
-        <p className="text-gray-500 mt-2">
-          Enter the 6-digit verification
-          code sent to your email.
-        </p>
-      </div>
-
-      <div>
-        <label className="block font-semibold mb-2">
-          Gmail / Email
-        </label>
-
-        <input
-          type="email"
+      <form onSubmit={handleResetPassword} className="space-y-4">
+        <AuthField
+          id="reset-email"
           name="email"
+          label="Email"
+          icon={Mail}
+          type="email"
           value={resetForm.email}
           onChange={handleResetChange}
           required
-          className="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+          primary={primary}
         />
-      </div>
 
-      <div>
-        <label className="block font-semibold mb-2">
-          Verification Code
-        </label>
-
-        <input
-          type="text"
+        <AuthField
+          id="reset-code"
           name="code"
+          label="Verification code"
+          icon={Hash}
           value={resetForm.code}
           onChange={handleResetChange}
           required
           maxLength={6}
           inputMode="numeric"
-          className="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="123456"
+          primary={primary}
         />
-      </div>
 
-      <div>
-        <label className="block font-semibold mb-2">
-          New Password
-        </label>
-
-        <input
-          type="password"
+        <AuthField
+          id="reset-new-password"
           name="new_password"
+          label="New password"
+          icon={LockKeyhole}
+          type="password"
           value={resetForm.new_password}
           onChange={handleResetChange}
           required
           autoComplete="new-password"
-          className="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+          primary={primary}
         />
-      </div>
 
-      <div>
-        <label className="block font-semibold mb-2">
-          Confirm New Password
-        </label>
-
-        <input
-          type="password"
+        <AuthField
+          id="reset-confirm-password"
           name="confirm_password"
+          label="Confirm new password"
+          icon={LockKeyhole}
+          type="password"
           value={resetForm.confirm_password}
           onChange={handleResetChange}
           required
           autoComplete="new-password"
-          className="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+          primary={primary}
         />
-      </div>
 
-      {resetMessage && (
-        <div className="bg-blue-50 border border-blue-200 text-blue-700 rounded-xl p-4 text-sm">
-          {resetMessage}
+        <div className="pt-2">
+          <AuthSubmit
+            loading={resetLoading}
+            loadingText="Resetting..."
+            primary={primary}
+          >
+            Reset password
+          </AuthSubmit>
         </div>
-      )}
 
-      <button
-        type="submit"
-        disabled={resetLoading}
-        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white py-4 rounded-xl font-bold"
-      >
-        {resetLoading
-          ? "Resetting..."
-          : "Reset Password"}
-      </button>
-
-      <button
-        type="button"
-        onClick={() =>
-          setActivePanel("login")
-        }
-        className="w-full text-gray-500 font-semibold"
-      >
-        Back to Login
-      </button>
-
-    </form>
+        <button
+          type="button"
+          onClick={() => setActivePanel("login")}
+          className={linkButton}
+        >
+          ← Back to sign in
+        </button>
+      </form>
+    </>
   );
 
   // ============================================================
@@ -918,260 +938,138 @@ function StaffLoginPage() {
   // ============================================================
 
   const renderChangePassword = () => (
-    <form
-      onSubmit={handleChangePassword}
-      className="space-y-5"
-    >
+    <>
+      <AuthHeading
+        title="Change password"
+        subtitle="Update the password for your staff account."
+      />
 
-      <div>
-        <h2 className="text-2xl font-black text-gray-900">
-          Change Password
-        </h2>
+      <AuthAlert tone={toneOf(changeMessage)}>{changeMessage}</AuthAlert>
 
-        <p className="text-gray-500 mt-2">
-          Change your current staff account
-          password.
-        </p>
-      </div>
-
-      <div>
-        <label className="block font-semibold mb-2">
-          Current Password
-        </label>
-
-        <input
+      <form onSubmit={handleChangePassword} className="space-y-4">
+        <AuthField
+          id="old_password"
+          label="Current password"
+          icon={LockKeyhole}
           type="password"
-          name="old_password"
-          value={
-            changeForm.old_password
-          }
-          onChange={
-            handleChangePasswordChange
-          }
+          value={changeForm.old_password}
+          onChange={handleChangePasswordChange}
           required
           autoComplete="current-password"
-          className="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+          primary={primary}
         />
-      </div>
 
-      <div>
-        <label className="block font-semibold mb-2">
-          New Password
-        </label>
-
-        <input
-          type="password"
+        <AuthField
+          id="change-new-password"
           name="new_password"
-          value={
-            changeForm.new_password
-          }
-          onChange={
-            handleChangePasswordChange
-          }
-          required
-          autoComplete="new-password"
-          className="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
-      <div>
-        <label className="block font-semibold mb-2">
-          Confirm New Password
-        </label>
-
-        <input
+          label="New password"
+          icon={LockKeyhole}
           type="password"
-          name="confirm_password"
-          value={
-            changeForm.confirm_password
-          }
-          onChange={
-            handleChangePasswordChange
-          }
+          value={changeForm.new_password}
+          onChange={handleChangePasswordChange}
           required
           autoComplete="new-password"
-          className="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+          primary={primary}
         />
-      </div>
 
-      {changeMessage && (
-        <div className="bg-blue-50 border border-blue-200 text-blue-700 rounded-xl p-4 text-sm">
-          {changeMessage}
+        <AuthField
+          id="change-confirm-password"
+          name="confirm_password"
+          label="Confirm new password"
+          icon={LockKeyhole}
+          type="password"
+          value={changeForm.confirm_password}
+          onChange={handleChangePasswordChange}
+          required
+          autoComplete="new-password"
+          primary={primary}
+        />
+
+        <div className="pt-2">
+          <AuthSubmit
+            loading={changeLoading}
+            loadingText="Changing password..."
+            primary={primary}
+          >
+            Change password
+          </AuthSubmit>
         </div>
-      )}
 
-      <button
-        type="submit"
-        disabled={changeLoading}
-        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white py-4 rounded-xl font-bold"
-      >
-        {changeLoading
-          ? "Changing Password..."
-          : "Change Password"}
-      </button>
-
-      <button
-        type="button"
-        onClick={() =>
-          setActivePanel("login")
-        }
-        className="w-full text-gray-500 font-semibold"
-      >
-        Back to Login
-      </button>
-
-    </form>
+        <button
+          type="button"
+          onClick={() => setActivePanel("login")}
+          className={linkButton}
+        >
+          ← Back to sign in
+        </button>
+      </form>
+    </>
   );
 
   // ============================================================
-  // LOADING
+  // LOADING / ERROR
   // ============================================================
 
   if (companyLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 flex items-center justify-center p-6">
-
-        <div className="bg-white rounded-3xl shadow-2xl p-10 text-center">
-
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
-
-          <p className="mt-5 font-semibold text-gray-700">
-            Loading company portal...
-          </p>
-
-        </div>
-
-      </div>
+      <AuthMessage
+        loading
+        message="Loading staff portal..."
+        primary={primary}
+        background={theme.background_color}
+      />
     );
   }
-
-  // ============================================================
-  // COMPANY ERROR
-  // ============================================================
 
   if (companyError) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 flex items-center justify-center p-6">
-
-        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-10 text-center">
-
-          <div className="w-16 h-16 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto text-3xl font-black">
-            !
-          </div>
-
-          <h1 className="text-2xl font-black mt-5">
-            Company Not Found
-          </h1>
-
-          <p className="text-gray-500 mt-3">
-            {companyError}
-          </p>
-
-          <p className="text-xs text-gray-400 mt-3 break-all">
-            Slug: {slug || "undefined"}
-          </p>
-
-          <button
-            onClick={() =>
-              navigate("/")
-            }
-            className="mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold"
-          >
-            Go Home
-          </button>
-
-        </div>
-
-      </div>
+      <AuthMessage
+        title="Company not found"
+        message={companyError}
+        actionTo="/"
+        actionLabel="Back to TrustFound"
+        primary={primary}
+        background={theme.background_color}
+      />
     );
   }
-
-  // ============================================================
-  // COMPANY DISPLAY
-  // ============================================================
-
-  const companyName =
-    company?.name ||
-    "Company";
-
-  const companyLogo =
-    company?.logo ||
-    null;
 
   // ============================================================
   // PAGE
   // ============================================================
 
+  const companyName = company?.name || "Company";
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 flex items-center justify-center p-6">
+    <AuthLayout
+      companyName={companyName}
+      logoUrl={resolveMediaUrl(company?.logo || company?.logo_url)}
+      primary={primary}
+      secondary={theme.secondary_color}
+      background={theme.background_color}
+      backTo={`/company/${encodeURIComponent(slug || "")}`}
+      tagline="Staff portal for verifying, matching and returning items. Authorised personnel only."
+    >
+      <span
+        className="mb-4 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide"
+        style={{
+          backgroundColor: withAlpha(primary, 0.1),
+          color: primary,
+        }}
+      >
+        <ShieldCheck size={14} />
+        Staff portal
+      </span>
 
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+      {activePanel === "login" && renderLogin()}
+      {activePanel === "forgot" && renderForgot()}
+      {activePanel === "reset" && renderReset()}
+      {activePanel === "change" && renderChangePassword()}
 
-        {/* COMPANY HEADER */}
-
-        <div className="bg-slate-950 text-white px-8 py-8 text-center">
-
-          {companyLogo ? (
-            <img
-              src={companyLogo}
-              alt={companyName}
-              className="w-24 h-24 rounded-2xl object-contain mx-auto mb-5 bg-white p-1"
-            />
-          ) : (
-            <div className="w-24 h-24 rounded-2xl bg-blue-600 flex items-center justify-center mx-auto mb-5 text-4xl font-black">
-              {companyName
-                .charAt(0)
-                .toUpperCase()}
-            </div>
-          )}
-
-          <h1 className="text-2xl font-black">
-            {companyName}
-          </h1>
-
-          <p className="text-blue-400 mt-2 text-sm font-semibold">
-            Staff Portal
-          </p>
-
-          <p className="text-slate-400 text-xs mt-1">
-            Lost & Found Management System
-          </p>
-
-        </div>
-
-        {/* CONTENT */}
-
-        <div className="p-8">
-
-          {activePanel === "login" &&
-            renderLogin()}
-
-          {activePanel === "forgot" &&
-            renderForgot()}
-
-          {activePanel === "reset" &&
-            renderReset()}
-
-          {activePanel === "change" &&
-            renderChangePassword()}
-
-          <div className="mt-8 text-center">
-
-            <p className="text-xs text-gray-400">
-              Authorized Personnel Only
-            </p>
-
-            <p className="text-xs text-gray-300 mt-1">
-              {companyName}
-            </p>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
+      <p className="mt-6 text-center text-xs text-stone-400">
+        Authorised personnel only · {companyName}
+      </p>
+    </AuthLayout>
   );
 }
 

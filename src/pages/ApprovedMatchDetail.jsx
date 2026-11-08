@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { API, API_BASE_URL } from "../config";
+import { upgradeLegacyColor } from "../theme";
 const SERVER = API_BASE_URL;
 
 const DEFAULT_SETTINGS = {
@@ -52,6 +53,7 @@ function getStoredObject(key) {
 // ============================================================
 
 function getValidColor(value, fallback) {
+    value = upgradeLegacyColor(value);
     if (typeof value !== "string") {
         return fallback;
     }

@@ -15,13 +15,7 @@ import {
 } from "lucide-react";
 
 import { API } from "../../config";
-import {
-    BRAND,
-    isLightColor,
-    readableTextColor,
-    resolveMediaUrl,
-    withAlpha,
-} from "../../theme";
+import { BRAND, isLightColor, readableTextColor, resolveMediaUrl, withAlpha, upgradeLegacyColor } from "../../theme";
 
 const DEFAULT_SETTINGS = {
     primary_color: BRAND.primary,
@@ -62,6 +56,7 @@ function getStoredObject(key) {
 }
 
 function normalizeColor(value, fallback) {
+    value = upgradeLegacyColor(value);
     return typeof value === "string" &&
         /^#[0-9a-fA-F]{6}$/.test(value.trim())
         ? value.trim()
@@ -370,8 +365,12 @@ export default function UserSidebar({
         : "rgba(255, 255, 255, 0.1)";
     const activeText = readableTextColor(primaryColor);
 
+    // Prefer the logo uploaded in Website Settings, then the
+    // company profile logo.
     const companyLogo = getImageUrl(
-        activeCompany?.logo_url || activeCompany?.logo
+        (typeof settings.logo === "string" && settings.logo) ||
+            activeCompany?.logo_url ||
+            activeCompany?.logo
     );
 
     const displayName =

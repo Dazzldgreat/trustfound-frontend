@@ -1,6 +1,8 @@
 import { createElement, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { API } from "../../config";
+import { PLACEHOLDER_IMAGE, resolveMediaUrl } from "../../theme";
+import PasswordInput from "../../component/PasswordInput";
 
 import {
   Activity,
@@ -17,6 +19,7 @@ import {
   Eye,
   FileText,
   Globe,
+  Image as ImageIcon,
   LayoutDashboard,
   Loader2,
   LogOut,
@@ -129,6 +132,27 @@ export default function CompanyDashboard() {
   });
 
   const [savingCompany, setSavingCompany] = useState(false);
+
+  // Reports browser: every stat card and report row is clickable.
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [selectedMatch, setSelectedMatch] = useState(null);
+  const [reportFilter, setReportFilter] = useState("all");
+  const [reportSearch, setReportSearch] = useState("");
+
+  const openReports = (filter = "all") => {
+    setReportFilter(filter);
+    setReportSearch("");
+    setActiveTab("reports");
+    setMobileMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const openUsers = (filter = "all") => {
+    setUserFilter(filter);
+    setActiveTab("users");
+    setMobileMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   // ------------------------------------------------------------
   // AUTHENTICATION
@@ -652,9 +676,65 @@ export default function CompanyDashboard() {
         )
       );
 
-  const reports = Array.isArray(data?.recent_reports)
-    ? data.recent_reports
-    : [];
+  const reports = Array.isArray(data?.reports)
+    ? data.reports
+    : Array.isArray(data?.recent_reports)
+      ? data.recent_reports
+      : [];
+
+  const matches = Array.isArray(data?.matches) ? data.matches : [];
+
+  const filteredReports = reports.filter((report) => {
+    const status = String(report.status || "").toLowerCase();
+    const type = String(report.type || "").toLowerCase();
+
+    const matchesFilter =
+      reportFilter === "all" ||
+      (reportFilter === "lost" && type === "lost") ||
+      (reportFilter === "found" && type === "found") ||
+      (reportFilter === "pending" && status === "pending") ||
+      (reportFilter === "recovered" && status === "recovered");
+
+    const search = reportSearch.trim().toLowerCase();
+
+    const matchesSearch =
+      !search ||
+      [
+        report.item_name,
+        report.category,
+        report.description,
+        report.location,
+        report.status,
+        report.reporter?.full_name,
+        report.reporter?.email,
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(search));
+
+    return matchesFilter && matchesSearch;
+  });
+
+  const filteredMatches = matches.filter((match) => {
+    const search = reportSearch.trim().toLowerCase();
+
+    return (
+      !search ||
+      [
+        match.lost_item?.item_name,
+        match.found_item?.item_name,
+        match.status,
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(search))
+    );
+  });
+
+  const findReport = (type, id) =>
+    reports.find(
+      (report) =>
+        String(report.id) === String(id) &&
+        String(report.type || "").toLowerCase() === type
+    );
 
   const filteredUsers = useMemo(() => {
     return users.filter((member) => {
@@ -863,18 +943,18 @@ export default function CompanyDashboard() {
       <div className="mx-auto grid max-w-[1600px] grid-cols-1 lg:grid-cols-[250px_minmax(0,1fr)]">
         {/* SIDEBAR */}
 
-        <aside className="hidden min-h-[calc(100vh-81px)] border-r border-slate-200 bg-white p-5 lg:block">
-          <div className="mb-5 rounded-2xl bg-blue-50 p-4">
-            <div className="flex items-center gap-2 text-sm font-bold text-blue-700">
+        <aside className="sticky top-[81px] hidden h-[calc(100vh-81px)] overflow-y-auto bg-graphite p-5 text-white lg:block">
+          <div className="mb-5 rounded-2xl bg-white/[0.07] p-4">
+            <div className="flex items-center gap-2 text-sm font-bold text-orange-300">
               <ShieldCheck size={18} />
               Company Workspace
             </div>
-            <p className="mt-2 break-all text-xs text-blue-600">
+            <p className="mt-2 break-all text-xs text-white/60">
               {activeCompanySlug || "Company slug not available"}
             </p>
           </div>
 
-          <p className="mb-3 px-3 text-xs font-black uppercase tracking-wider text-slate-400">
+          <p className="mb-3 px-3 text-xs font-black uppercase tracking-wider text-white/50">
             Management
           </p>
 
@@ -892,8 +972,8 @@ export default function CompanyDashboard() {
                   }}
                   className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left font-semibold transition ${
                     active
-                      ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
-                      : "text-slate-600 hover:bg-slate-100"
+                      ? "bg-orange-600 text-white shadow-lg shadow-black/20"
+                      : "text-white/80 hover:bg-white/10 hover:text-white"
                   }`}
                 >
                   <Icon size={19} />
@@ -906,14 +986,23 @@ export default function CompanyDashboard() {
             })}
           </nav>
 
-          <div className="mt-8 border-t border-slate-200 pt-5">
-            <p className="mb-3 px-3 text-xs font-black uppercase tracking-wider text-slate-400">
+          <div className="mt-8 border-t border-white/10 pt-5">
+            <p className="mb-3 px-3 text-xs font-black uppercase tracking-wider text-white/50">
               Website
             </p>
 
             <button
+              onClick={() => navigate(companyRoute("/website-settings"))}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left font-semibold text-white/80 hover:bg-white/10 hover:text-white"
+            >
+              <Monitor size={19} />
+              Website Settings
+              <ArrowRight className="ml-auto" size={16} />
+            </button>
+
+            <button
               onClick={openPublicWebsite}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left font-semibold text-slate-600 hover:bg-slate-100"
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left font-semibold text-white/80 hover:bg-white/10 hover:text-white"
             >
               <Globe size={19} />
               Public Website
@@ -1094,59 +1183,66 @@ export default function CompanyDashboard() {
                 <StatCard
                   title="Lost Items"
                   value={stats.lost ?? 0}
-                  description="Items reported lost"
+                  description="View lost reports"
                   icon={Search}
                   color="blue"
+                  onClick={() => openReports("lost")}
                 />
 
                 <StatCard
                   title="Found Items"
                   value={stats.found ?? 0}
-                  description="Items reported found"
+                  description="View found reports"
                   icon={ShieldCheck}
-                  color="violet"
+                  color="graphite"
+                  onClick={() => openReports("found")}
                 />
 
                 <StatCard
                   title="Potential Matches"
                   value={stats.matched ?? 0}
-                  description="Items matched"
+                  description="View AI matches"
                   icon={Activity}
                   color="amber"
+                  onClick={() => openReports("matches")}
                 />
 
                 <StatCard
                   title="Recovered"
                   value={stats.recovered ?? 0}
-                  description="Items returned to owners"
+                  description="View returned items"
                   icon={CheckCircle2}
                   color="emerald"
+                  onClick={() => openReports("recovered")}
                 />
               </div>
 
               <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 <StatCard
-                  title="Pending Matches"
+                  title="Pending"
                   value={stats.pending ?? 0}
-                  description="Awaiting review"
+                  description="View items awaiting review"
                   icon={Clock}
                   color="amber"
+                  onClick={() => openReports("pending")}
                 />
 
                 <StatCard
                   title="Staff Members"
                   value={stats.staff ?? staffMembers.length}
-                  description="Staff in your company"
+                  description="View staff accounts"
                   icon={Users}
                   color="blue"
+                  onClick={() => openUsers("staff")}
                 />
 
                 <StatCard
                   title="Company Users"
-                  value={stats.users ?? users.length}
-                  description="Accounts returned by your API"
+                  value={stats.total_users ?? users.length}
+                  description="View all user accounts"
                   icon={UserPlus}
-                  color="violet"
+                  color="graphite"
+                  onClick={() => openUsers("all")}
                 />
               </div>
 
@@ -1194,7 +1290,7 @@ export default function CompanyDashboard() {
                     icon={FileText}
                     title="Recent reports"
                     description="Review the latest reports returned by your API."
-                    onClick={() => setActiveTab("reports")}
+                    onClick={() => openReports("all")}
                   />
 
                   <QuickAction
@@ -1208,7 +1304,16 @@ export default function CompanyDashboard() {
 
               {/* RECENT REPORTS */}
 
-              <ReportsSection reports={reports} />
+              <ReportsSection
+                title="Recent reports"
+                description="Click any report to see its photo and full details."
+                reports={reports.slice(0, 6)}
+                onSelect={setSelectedReport}
+                onViewAll={
+                  reports.length > 6 ? () => openReports("all") : undefined
+                }
+                totalCount={reports.length}
+              />
             </>
           )}
 
@@ -1568,8 +1673,8 @@ export default function CompanyDashboard() {
             <section>
               <PageHeading
                 eyebrow="LOST & FOUND OPERATIONS"
-                title="Recent Reports"
-                description="Review the recent report records returned by your company dashboard API."
+                title="Reports"
+                description="Every lost and found item in your company. Click an item to see its photo and full details."
                 action={
                   <button
                     onClick={loadDashboard}
@@ -1581,7 +1686,76 @@ export default function CompanyDashboard() {
                 }
               />
 
-              <ReportsSection reports={reports} />
+              {/* FILTERS */}
+
+              <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-4">
+                <div className="relative">
+                  <Search
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    size={18}
+                  />
+                  <input
+                    value={reportSearch}
+                    onChange={(event) => setReportSearch(event.target.value)}
+                    placeholder="Search item, category, location, status or reporter..."
+                    className="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-4 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50"
+                  />
+                </div>
+
+                <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                  {[
+                    { id: "all", label: "All reports", count: reports.length },
+                    { id: "lost", label: "Lost", count: stats.lost },
+                    { id: "found", label: "Found", count: stats.found },
+                    { id: "pending", label: "Pending", count: stats.pending_reports },
+                    { id: "recovered", label: "Recovered", count: stats.resolved_reports },
+                    { id: "matches", label: "AI matches", count: matches.length },
+                  ].map((filter) => (
+                    <button
+                      key={filter.id}
+                      type="button"
+                      onClick={() => setReportFilter(filter.id)}
+                      className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-bold transition ${
+                        reportFilter === filter.id
+                          ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+                          : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      {filter.label}
+                      {filter.count !== undefined && (
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-xs ${
+                            reportFilter === filter.id
+                              ? "bg-white/20"
+                              : "bg-slate-100"
+                          }`}
+                        >
+                          {filter.count ?? 0}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {reportFilter === "matches" ? (
+                <MatchesSection
+                  matches={filteredMatches}
+                  onSelect={setSelectedMatch}
+                />
+              ) : (
+                <ReportsSection
+                  title={
+                    reportFilter === "all"
+                      ? "All reports"
+                      : `${reportFilter.charAt(0).toUpperCase()}${reportFilter.slice(1)} reports`
+                  }
+                  description={`${filteredReports.length} item(s) shown.`}
+                  reports={filteredReports}
+                  onSelect={setSelectedReport}
+                  grid
+                />
+              )}
             </section>
           )}
 
@@ -1610,11 +1784,40 @@ export default function CompanyDashboard() {
         <UserDetailsModal
           member={selectedStaff}
           onClose={() => setSelectedStaff(null)}
+          onSelectItem={(item) => {
+            setSelectedStaff(null);
+            setSelectedReport(item);
+          }}
           onRemove={
             String(selectedStaff.role || "").toLowerCase() === "staff"
               ? () => deleteStaff(selectedStaff.id)
               : null
           }
+        />
+      )}
+
+      {/* REPORT DETAILS MODAL */}
+
+      {selectedReport && (
+        <ReportDetailsModal
+          report={selectedReport}
+          onClose={() => setSelectedReport(null)}
+        />
+      )}
+
+      {/* MATCH DETAILS MODAL */}
+
+      {selectedMatch && (
+        <MatchDetailsModal
+          match={selectedMatch}
+          onClose={() => setSelectedMatch(null)}
+          onOpenItem={(type, id) => {
+            const item = findReport(type, id);
+            if (item) {
+              setSelectedMatch(null);
+              setSelectedReport(item);
+            }
+          }}
         />
       )}
     </div>
@@ -1631,16 +1834,21 @@ function StatCard({
   description,
   icon: Icon,
   color = "blue",
+  onClick,
 }) {
   const colors = {
-    blue: "bg-blue-50 text-blue-600",
-    violet: "bg-violet-50 text-violet-600",
+    blue: "bg-orange-50 text-orange-600",
+    graphite: "bg-stone-100 text-stone-800",
     amber: "bg-amber-50 text-amber-600",
     emerald: "bg-emerald-50 text-emerald-600",
   };
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:p-6">
+    <button
+      type="button"
+      onClick={onClick}
+      className="group w-full rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-md sm:p-6"
+    >
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-semibold text-slate-500">{title}</p>
@@ -1649,15 +1857,81 @@ function StatCard({
           </p>
         </div>
 
-        <div className={`rounded-2xl p-3 ${colors[color]}`}>
+        <div className={`rounded-2xl p-3 ${colors[color] || colors.blue}`}>
           {Icon && <Icon size={23} />}
         </div>
       </div>
 
-      <div className="mt-4 flex items-center gap-2 text-sm text-slate-500">
-        <ArrowDownRight size={15} />
+      <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-slate-500 transition group-hover:text-orange-600">
         {description}
+        <ArrowRight
+          size={15}
+          className="transition group-hover:translate-x-1"
+        />
       </div>
+    </button>
+  );
+}
+
+// ============================================================
+// STATUS BADGE
+// ============================================================
+
+function StatusBadge({ status }) {
+  const value = String(status || "Pending");
+  const key = value.toLowerCase();
+
+  const styles =
+    key === "recovered" || key === "verified" || key === "approved"
+      ? "bg-emerald-50 text-emerald-700"
+      : key === "matched" || key.includes("recovery")
+        ? "bg-orange-100 text-orange-700"
+        : key === "rejected"
+          ? "bg-red-50 text-red-600"
+          : key === "pending"
+            ? "bg-amber-50 text-amber-700"
+            : "bg-slate-100 text-slate-700";
+
+  return (
+    <span
+      className={`inline-flex w-fit shrink-0 rounded-full px-3 py-1 text-xs font-bold capitalize ${styles}`}
+    >
+      {value}
+    </span>
+  );
+}
+
+function formatDate(value) {
+  if (!value) return "";
+
+  const date = new Date(value);
+
+  return Number.isNaN(date.getTime())
+    ? String(value)
+    : date.toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+}
+
+function ItemThumb({ report, className = "h-16 w-16" }) {
+  const src = resolveMediaUrl(report.image);
+
+  return src ? (
+    <img
+      src={src}
+      alt={report.item_name || "Item"}
+      className={`${className} item-image shrink-0 rounded-xl border border-slate-200`}
+      onError={(event) => {
+        event.currentTarget.src = PLACEHOLDER_IMAGE;
+      }}
+    />
+  ) : (
+    <div
+      className={`${className} flex shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-400`}
+    >
+      <ImageIcon size={22} />
     </div>
   );
 }
@@ -1763,16 +2037,29 @@ function Field({
         {label}
       </label>
 
-      <input
-        id={name}
-        name={name}
-        type={type}
-        value={value ?? ""}
-        onChange={onChange}
-        placeholder={placeholder}
-        required={required}
-        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50"
-      />
+      {type === "password" ? (
+        <PasswordInput
+          id={name}
+          name={name}
+          value={value ?? ""}
+          onChange={onChange}
+          placeholder={placeholder}
+          required={required}
+          autoComplete="new-password"
+          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50"
+        />
+      ) : (
+        <input
+          id={name}
+          name={name}
+          type={type}
+          value={value ?? ""}
+          onChange={onChange}
+          placeholder={placeholder}
+          required={required}
+          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50"
+        />
+      )}
     </div>
   );
 }
@@ -1963,9 +2250,11 @@ function UserRow({ member, onSelect, onRemove, removing = false }) {
 // USER DETAILS MODAL
 // ============================================================
 
-function UserDetailsModal({ member, onClose, onRemove }) {
+function UserDetailsModal({ member, onClose, onRemove, onSelectItem }) {
   const fullName =
     `${member.first_name || ""} ${member.last_name || ""}`.trim();
+
+  const items = Array.isArray(member.items) ? member.items : [];
 
   return (
     <div
@@ -2032,7 +2321,45 @@ function UserDetailsModal({ member, onClose, onRemove }) {
             label="Account status"
             value={member.is_active === false ? "Inactive" : "Active"}
           />
+
+          {member.date_joined && (
+            <Info label="Joined" value={formatDate(member.date_joined)} />
+          )}
         </div>
+
+        {/* THIS USER'S ITEMS */}
+
+        {items.length > 0 && (
+          <div className="mt-7">
+            <h4 className="mb-3 font-black text-slate-900">
+              Reported items ({items.length})
+            </h4>
+
+            <div className="space-y-2">
+              {items.map((item) => (
+                <button
+                  key={`${item.type}-${item.id}`}
+                  type="button"
+                  onClick={() => onSelectItem?.(item)}
+                  className="flex w-full items-center gap-3 rounded-xl border border-slate-200 p-3 text-left transition hover:border-orange-300 hover:bg-orange-50/40"
+                >
+                  <ItemThumb report={item} className="h-12 w-12" />
+
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-bold text-slate-900">
+                      {item.item_name || "Unnamed item"}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {item.type} · {formatDate(item.created_at)}
+                    </p>
+                  </div>
+
+                  <StatusBadge status={item.status} />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="mt-7 flex flex-wrap gap-3">
           <button
@@ -2078,44 +2405,108 @@ function Info({ label, value }) {
 // RECENT REPORTS
 // ============================================================
 
-function ReportsSection({ reports = [] }) {
+function ReportsSection({
+  title = "Recent reports",
+  description,
+  reports = [],
+  onSelect,
+  onViewAll,
+  totalCount,
+  grid = false,
+}) {
   return (
     <section className="mt-8 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
       <div className="flex items-center justify-between gap-3 border-b border-slate-100 p-5 sm:p-6">
         <div>
-          <h3 className="text-xl font-black">Recent Reports</h3>
-          <p className="mt-1 text-sm text-slate-500">
-            The latest reports returned by your dashboard API.
-          </p>
+          <h3 className="text-xl font-black">{title}</h3>
+          {description && (
+            <p className="mt-1 text-sm text-slate-500">{description}</p>
+          )}
         </div>
 
-        <div className="rounded-xl bg-blue-50 p-3 text-blue-600">
-          <FileText size={21} />
-        </div>
+        {onViewAll ? (
+          <button
+            type="button"
+            onClick={onViewAll}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 px-3.5 py-2 text-sm font-bold text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
+          >
+            View all {totalCount ? `(${totalCount})` : ""}
+            <ArrowRight size={15} />
+          </button>
+        ) : (
+          <div className="rounded-xl bg-orange-50 p-3 text-orange-600">
+            <FileText size={21} />
+          </div>
+        )}
       </div>
 
       {reports.length === 0 ? (
         <EmptyState
           icon={FileText}
-          title="No reports yet"
-          description="Reports will appear here when the company dashboard API returns them."
+          title="No reports found"
+          description="Lost and found items reported in your company will appear here."
         />
+      ) : grid ? (
+        <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2 xl:grid-cols-3">
+          {reports.map((report) => (
+            <button
+              key={`${report.type}-${report.id}`}
+              type="button"
+              onClick={() => onSelect?.(report)}
+              className="group overflow-hidden rounded-2xl border border-slate-200 bg-white text-left transition hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-lg"
+            >
+              <ItemThumb
+                report={report}
+                className="h-44 w-full rounded-none border-0 border-b"
+              />
+
+              <div className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <h4 className="min-w-0 break-words font-black text-slate-900 group-hover:text-orange-600">
+                    {report.item_name || "Unnamed item"}
+                  </h4>
+                  <StatusBadge status={report.status} />
+                </div>
+
+                <p className="mt-1 text-xs font-bold uppercase tracking-wide text-slate-400">
+                  {report.type} · {report.category || "No category"}
+                </p>
+
+                <p className="mt-3 flex items-center gap-1.5 text-sm text-slate-500">
+                  <MapPin size={14} className="shrink-0" />
+                  <span className="truncate">
+                    {report.location || "Location not provided"}
+                  </span>
+                </p>
+
+                <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-500">
+                  <Clock size={14} className="shrink-0" />
+                  {formatDate(report.date_lost || report.date_found || report.created_at)}
+                </p>
+              </div>
+            </button>
+          ))}
+        </div>
       ) : (
         <div className="divide-y divide-slate-100">
           {reports.map((report) => (
-            <div
-              key={report.id}
-              className="flex flex-col justify-between gap-3 p-5 sm:flex-row sm:items-center"
+            <button
+              key={`${report.type}-${report.id}`}
+              type="button"
+              onClick={() => onSelect?.(report)}
+              className="group flex w-full flex-col justify-between gap-3 p-5 text-left transition hover:bg-orange-50/40 sm:flex-row sm:items-center"
             >
-              <div className="flex min-w-0 items-start gap-3">
-                <div className="rounded-xl bg-slate-100 p-3 text-slate-600">
-                  <FileText size={19} />
-                </div>
+              <div className="flex min-w-0 items-center gap-4">
+                <ItemThumb report={report} />
 
                 <div className="min-w-0">
-                  <h4 className="break-words font-bold text-slate-900">
+                  <h4 className="break-words font-bold text-slate-900 group-hover:text-orange-600">
                     {report.item_name || report.title || "Unnamed item"}
                   </h4>
+
+                  <p className="mt-0.5 text-xs font-bold uppercase tracking-wide text-slate-400">
+                    {report.type} · {report.category || "No category"}
+                  </p>
 
                   <p className="mt-1 flex items-center gap-2 text-sm text-slate-500">
                     <MapPin size={14} />
@@ -2126,14 +2517,408 @@ function ReportsSection({ reports = [] }) {
                 </div>
               </div>
 
-              <span className="w-fit rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold capitalize text-slate-700">
-                {report.status || "Pending"}
-              </span>
-            </div>
+              <div className="flex items-center gap-3">
+                <StatusBadge status={report.status} />
+                <ChevronRight
+                  size={18}
+                  className="hidden text-slate-300 transition group-hover:translate-x-1 group-hover:text-orange-600 sm:block"
+                />
+              </div>
+            </button>
           ))}
         </div>
       )}
     </section>
+  );
+}
+
+// ============================================================
+// AI MATCHES
+// ============================================================
+
+function MatchesSection({ matches = [], onSelect }) {
+  return (
+    <section className="mt-8 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <div className="border-b border-slate-100 p-5 sm:p-6">
+        <h3 className="text-xl font-black">AI matches</h3>
+        <p className="mt-1 text-sm text-slate-500">
+          {matches.length} match(es). Click one to see the scores and both items.
+        </p>
+      </div>
+
+      {matches.length === 0 ? (
+        <EmptyState
+          icon={Activity}
+          title="No matches yet"
+          description="When a lost item and a found item look alike, the match appears here."
+        />
+      ) : (
+        <div className="divide-y divide-slate-100">
+          {matches.map((match) => (
+            <button
+              key={match.id}
+              type="button"
+              onClick={() => onSelect?.(match)}
+              className="group flex w-full flex-col justify-between gap-3 p-5 text-left transition hover:bg-orange-50/40 sm:flex-row sm:items-center"
+            >
+              <div className="min-w-0">
+                <h4 className="break-words font-bold text-slate-900 group-hover:text-orange-600">
+                  {match.lost_item?.item_name || "Lost item"}
+                  <span className="mx-2 text-slate-300">↔</span>
+                  {match.found_item?.item_name || "Found item"}
+                </h4>
+                <p className="mt-1 text-sm text-slate-500">
+                  Updated {formatDate(match.updated_at || match.created_at)}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <span className="rounded-full bg-graphite px-3 py-1 text-xs font-bold text-white">
+                  {Math.round(Number(match.confidence_score) || 0)}%
+                </span>
+                <StatusBadge status={match.status} />
+                <ChevronRight
+                  size={18}
+                  className="hidden text-slate-300 transition group-hover:translate-x-1 group-hover:text-orange-600 sm:block"
+                />
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+// ============================================================
+// MODAL SHELL
+// ============================================================
+
+function Modal({ title, subtitle, onClose, children, wide = false }) {
+  useEffect(() => {
+    const onKey = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6"
+      onClick={onClose}
+    >
+      <div
+        className={`max-h-[92vh] w-full overflow-y-auto rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl ${
+          wide ? "sm:max-w-3xl" : "sm:max-w-lg"
+        }`}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-100 bg-white/95 p-5 backdrop-blur sm:p-6">
+          <div className="min-w-0">
+            <h3 className="break-words text-xl font-black text-slate-900 sm:text-2xl">
+              {title}
+            </h3>
+            {subtitle && <div className="mt-1.5">{subtitle}</div>}
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="shrink-0 rounded-xl bg-slate-100 p-2 hover:bg-slate-200"
+            aria-label="Close"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="p-5 sm:p-6">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// REPORT DETAILS
+// ============================================================
+
+function ReportDetailsModal({ report, onClose }) {
+  const isLost = String(report.type).toLowerCase() === "lost";
+  const image = resolveMediaUrl(report.image);
+  const person =
+    report.reporter?.full_name || report.reporter?.username || null;
+
+  const contact = isLost
+    ? {
+        name: report.contact_name,
+        phone: report.contact_phone,
+        email: report.contact_email,
+      }
+    : {
+        name: report.finder_name,
+        phone: report.finder_phone,
+        email: report.finder_email,
+      };
+
+  const tags = Array.isArray(report.tags) ? report.tags : [];
+
+  const staffInfo = !isLost
+    ? [
+        ["Verified by", report.verified_by?.full_name || report.verified_by?.username],
+        ["Verified on", formatDate(report.verified_at)],
+        ["Found by staff", report.found_by_staff_user?.full_name || report.found_by_staff_user?.username],
+        ["Received by", report.staff_receiver?.full_name || report.staff_receiver?.username],
+        ["Received from", report.received_from],
+        ["Recovered by", report.recovered_by?.full_name || report.recovered_by?.username],
+        ["Recovered on", formatDate(report.recovered_at)],
+      ].filter(([, value]) => value)
+    : [];
+
+  return (
+    <Modal
+      wide
+      title={report.item_name || "Item details"}
+      subtitle={
+        <div className="flex flex-wrap items-center gap-2">
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-bold ${
+              isLost ? "bg-orange-600 text-white" : "bg-graphite text-white"
+            }`}
+          >
+            {isLost ? "Lost item" : "Found item"}
+          </span>
+          <StatusBadge status={report.status} />
+        </div>
+      }
+      onClose={onClose}
+    >
+      {/* PHOTO */}
+      {image ? (
+        <div className="mb-6 overflow-hidden rounded-2xl border border-slate-200">
+          <img
+            src={image}
+            alt={report.item_name || "Item photo"}
+            className="item-image zoomable max-h-[420px] w-full"
+            onError={(event) => {
+              event.currentTarget.src = PLACEHOLDER_IMAGE;
+            }}
+          />
+          <p className="bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-500">
+            Click the photo to view it full size.
+          </p>
+        </div>
+      ) : (
+        <div className="mb-6 flex h-40 flex-col items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+          <ImageIcon size={30} />
+          <p className="mt-2 text-sm font-semibold">No photo provided</p>
+        </div>
+      )}
+
+      {/* DESCRIPTION */}
+      {report.description && (
+        <div className="mb-6">
+          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+            Description
+          </p>
+          <p className="whitespace-pre-line leading-7 text-slate-700">
+            {report.description}
+          </p>
+        </div>
+      )}
+
+      {/* KEY FACTS */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Info label="Category" value={report.category || "Not provided"} />
+        <Info
+          label={isLost ? "Where it was lost" : "Where it was found"}
+          value={report.location || "Not provided"}
+        />
+        <Info
+          label={isLost ? "Date lost" : "Date found"}
+          value={
+            [
+              formatDate(isLost ? report.date_lost : report.date_found),
+              isLost ? report.time_lost : report.time_found,
+            ]
+              .filter(Boolean)
+              .join(" · ") || "Not provided"
+          }
+        />
+        <Info label="Reported on" value={formatDate(report.created_at) || "—"} />
+        {isLost && report.reward_offered ? (
+          <Info label="Reward offered" value={String(report.reward_offered)} />
+        ) : null}
+        {person && (
+          <Info
+            label="Reported by"
+            value={`${person}${report.reporter?.email ? ` (${report.reporter.email})` : ""}`}
+          />
+        )}
+      </div>
+
+      {/* CONTACT */}
+      {(contact.name || contact.phone || contact.email) && (
+        <div className="mt-6 rounded-2xl border border-orange-200 bg-orange-50/50 p-4">
+          <p className="mb-3 text-xs font-bold uppercase tracking-wider text-orange-700">
+            {isLost ? "Owner contact" : "Finder contact"}
+          </p>
+          <div className="space-y-2 text-sm text-slate-700">
+            {contact.name && (
+              <p className="flex items-center gap-2 font-semibold">
+                <Users size={15} className="text-orange-600" />
+                {contact.name}
+              </p>
+            )}
+            {contact.phone && (
+              <a
+                href={`tel:${contact.phone}`}
+                className="flex items-center gap-2 hover:text-orange-600"
+              >
+                <Phone size={15} className="text-orange-600" />
+                {contact.phone}
+              </a>
+            )}
+            {contact.email && (
+              <a
+                href={`mailto:${contact.email}`}
+                className="flex items-center gap-2 break-all hover:text-orange-600"
+              >
+                <Mail size={15} className="text-orange-600" />
+                {contact.email}
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* STAFF HANDLING */}
+      {staffInfo.length > 0 && (
+        <div className="mt-6">
+          <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-400">
+            Staff handling
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {staffInfo.map(([label, value]) => (
+              <Info key={label} label={label} value={value} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAGS */}
+      {tags.length > 0 && (
+        <div className="mt-6 flex flex-wrap gap-2">
+          {tags.map((tag) => (
+            <span
+              key={String(tag)}
+              className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600"
+            >
+              #{String(tag)}
+            </span>
+          ))}
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+// ============================================================
+// MATCH DETAILS
+// ============================================================
+
+function MatchDetailsModal({ match, onClose, onOpenItem }) {
+  const scores = [
+    ["Overall confidence", match.confidence_score],
+    ["Name", match.name_score],
+    ["Description", match.description_score],
+    ["Image", match.image_score],
+    ["Location", match.location_score],
+    ["Category", match.category_score],
+    ["Date", match.date_score],
+    ["Tags", match.tag_score],
+  ].filter(([, value]) => value !== null && value !== undefined);
+
+  const timeline = Array.isArray(match.timeline) ? match.timeline : [];
+
+  return (
+    <Modal
+      wide
+      title="AI match"
+      subtitle={<StatusBadge status={match.status} />}
+      onClose={onClose}
+    >
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {[
+          ["lost", "Lost item", match.lost_item],
+          ["found", "Found item", match.found_item],
+        ].map(([type, label, item]) => (
+          <button
+            key={type}
+            type="button"
+            onClick={() => onOpenItem(type, item?.id)}
+            className="group rounded-2xl border border-slate-200 p-4 text-left transition hover:border-orange-300 hover:bg-orange-50/40"
+          >
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              {label}
+            </p>
+            <p className="mt-1 font-black text-slate-900 group-hover:text-orange-600">
+              {item?.item_name || "Unknown"}
+            </p>
+            <p className="mt-1 text-sm text-slate-500">
+              {item?.category || "No category"} · {item?.status || "—"}
+            </p>
+            <p className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-orange-600">
+              View item <ArrowRight size={14} />
+            </p>
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-6 space-y-3">
+        {scores.map(([label, value]) => {
+          const percent = Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
+
+          return (
+            <div key={label}>
+              <div className="mb-1 flex justify-between text-sm">
+                <span className="font-semibold text-slate-700">{label}</span>
+                <span className="font-bold text-slate-900">{percent}%</span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className="h-full rounded-full bg-orange-600"
+                  style={{ width: `${percent}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {timeline.length > 0 && (
+        <div className="mt-6">
+          <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-400">
+            Timeline
+          </p>
+          <ol className="space-y-3 border-l-2 border-orange-200 pl-4">
+            {timeline.map((entry) => (
+              <li key={entry.id}>
+                <p className="font-semibold text-slate-800">
+                  {entry.description || entry.action}
+                </p>
+                <p className="text-xs text-slate-500">
+                  {formatDate(entry.created_at)}
+                  {entry.performed_by?.full_name
+                    ? ` · ${entry.performed_by.full_name}`
+                    : ""}
+                </p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+    </Modal>
   );
 }
 

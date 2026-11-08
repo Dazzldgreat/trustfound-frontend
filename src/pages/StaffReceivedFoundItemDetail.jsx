@@ -152,7 +152,7 @@ function StaffReceivedFoundItemDetail() {
                             <img
                                 src={item.image}
                                 alt={item.item_name}
-                                className="w-full h-[420px] object-cover rounded-xl shadow"
+                                className="w-full h-[420px] item-image zoomable rounded-xl shadow"
                             />
 
                         ) : (

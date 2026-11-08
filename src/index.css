@@ -89,12 +89,21 @@ input[type="color"] {
   scrollbar-width: none;
 }
 
-/* Item photos: show the whole item, never crop details away.
-   Clicking one opens the full-size viewer (see ImageViewer.jsx). */
+/* Item photos: show the whole item, never crop details away. */
 .item-image {
   object-fit: contain !important;
   background-color: #f6efe7;
+}
+
+/* Detail-page photos: click to open the full-size viewer
+   (see component/ImageViewer.jsx). */
+.zoomable {
   cursor: zoom-in;
+  transition: filter 0.2s ease;
+}
+
+.zoomable:hover {
+  filter: brightness(0.96);
 }
 
 /* ============================================================

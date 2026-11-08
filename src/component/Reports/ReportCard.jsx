@@ -1,7 +1,4 @@
-import React from "react";
-import { API_BASE_URL } from "../../config";
-
-const SERVER = API_BASE_URL;
+import { PLACEHOLDER_IMAGE, resolveMediaUrl } from "../../theme";
 
 function ReportCard({
     report,
@@ -14,40 +11,8 @@ function ReportCard({
     // IMAGE URL
     // ============================================================
 
-    const getImageUrl = (image) => {
-
-        if (!image) {
-            return "/placeholder.png";
-        }
-
-        let imageUrl = String(image).trim();
-
-        // Fix malformed URLs such as:
-        // http//127.0.0.1:8000/media/...
-        if (
-            imageUrl.startsWith("http//")
-        ) {
-            imageUrl =
-                "http://" +
-                imageUrl.substring(6);
-        }
-
-        // Already a complete URL
-        if (
-            imageUrl.startsWith("http://") ||
-            imageUrl.startsWith("https://")
-        ) {
-            return imageUrl;
-        }
-
-        // Django media path
-        if (imageUrl.startsWith("/")) {
-            return `${SERVER}${imageUrl}`;
-        }
-
-        // Media path without leading slash
-        return `${SERVER}/${imageUrl}`;
-    };
+    const getImageUrl = (image) =>
+        resolveMediaUrl(image) || PLACEHOLDER_IMAGE;
 
     const image = getImageUrl(
         report.image ||
@@ -76,7 +41,7 @@ function ReportCard({
                 return "bg-blue-100 text-blue-700";
 
             case "approved":
-                return "bg-purple-100 text-purple-700";
+                return "bg-stone-800 text-white";
 
             case "recovered":
                 return "bg-green-100 text-green-700";
@@ -97,14 +62,14 @@ function ReportCard({
 
         if (
             event.currentTarget.src.endsWith(
-                "/placeholder.png"
+                PLACEHOLDER_IMAGE
             )
         ) {
             return;
         }
 
         event.currentTarget.src =
-            "/placeholder.png";
+            PLACEHOLDER_IMAGE;
     };
 
     // ============================================================
@@ -117,7 +82,12 @@ function ReportCard({
 
             {/* IMAGE */}
 
-            <div className="w-full h-56 bg-gray-100 overflow-hidden">
+            <button
+                type="button"
+                onClick={() => onView(report)}
+                className="block w-full h-56 bg-gray-100 overflow-hidden"
+                aria-label={`View ${report.item_name || "report"}`}
+            >
 
                 <img
                     src={image}
@@ -126,10 +96,10 @@ function ReportCard({
                         "Reported item"
                     }
                     onError={handleImageError}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full item-image transition duration-300 hover:scale-[1.03]"
                 />
 
-            </div>
+            </button>
 
             {/* CONTENT */}
 
@@ -139,7 +109,10 @@ function ReportCard({
 
                 <div className="flex justify-between items-start gap-4">
 
-                    <h2 className="text-2xl font-bold text-gray-900 break-words">
+                    <h2
+                        className="text-2xl font-bold text-gray-900 break-words cursor-pointer hover:text-primary transition"
+                        onClick={() => onView(report)}
+                    >
 
                         {report.item_name || "Unnamed Item"}
 

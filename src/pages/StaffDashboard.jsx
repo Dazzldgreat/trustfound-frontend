@@ -1508,7 +1508,7 @@ function StaffDashboard() {
                                                         event.currentTarget.style.display =
                                                             "none";
                                                     }}
-                                                    className="w-20 h-16 lg:w-32 lg:h-20 rounded-xl object-cover border border-slate-200 bg-slate-50"
+                                                    className="w-20 h-16 lg:w-32 lg:h-20 rounded-xl item-image border border-slate-200 bg-slate-50"
                                                 />
                                             ) : (
                                                 <div className="w-20 h-16 lg:w-32 lg:h-20 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center">

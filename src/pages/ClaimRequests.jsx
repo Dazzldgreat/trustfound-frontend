@@ -441,7 +441,7 @@ function ClaimRequests() {
                                     <img
                                         src={companyLogoUrl}
                                         alt={`${companyName} logo`}
-                                        className="w-full h-full object-cover"
+                                        className="w-full h-full item-image"
                                         onError={(event) => {
                                             event.currentTarget.style.display =
                                                 "none";
@@ -699,7 +699,7 @@ function ClaimRequests() {
                                                 <img
                                                     src={imageUrl}
                                                     alt={itemName}
-                                                    className="w-full md:w-28 h-28 object-cover rounded-xl border border-slate-200 shrink-0"
+                                                    className="w-full md:w-28 h-28 item-image rounded-xl border border-slate-200 shrink-0"
                                                     onError={(event) => {
                                                         event.currentTarget.style.display =
                                                             "none";

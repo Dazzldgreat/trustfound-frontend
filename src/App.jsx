@@ -84,10 +84,15 @@ import StaffLayout from "./component/layout/StaffLayout";
 import ProtectedRoute from "./pages/ProtectedRoute";
 import ProtectedStaffRoute from "./pages/ProtectedStaffRoute";
 
+/* Full-size viewer for any item photo marked "zoomable" */
+import ImageViewer from "./component/ImageViewer";
+
 
 function App() {
     return (
         <BrowserRouter>
+
+            <ImageViewer />
 
             <Routes>
 

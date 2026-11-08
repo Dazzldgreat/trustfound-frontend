@@ -851,7 +851,7 @@ function VerifiedItems() {
                                     alt={
                                         company.name
                                     }
-                                    className="w-full h-full object-cover"
+                                    className="w-full h-full item-image"
                                 />
 
                             ) : (
@@ -1135,7 +1135,7 @@ function VerifiedItems() {
                                                     item?.item_name ||
                                                     "Item"
                                                 }
-                                                className="w-28 h-28 sm:w-32 sm:h-32 rounded-lg object-cover border border-slate-200 shrink-0"
+                                                className="w-28 h-28 sm:w-32 sm:h-32 rounded-lg item-image border border-slate-200 shrink-0"
                                                 onError={(
                                                     event
                                                 ) => {
@@ -1427,7 +1427,7 @@ function VerifiedItems() {
                                         selected?.item_name ||
                                         "Item"
                                     }
-                                    className="w-full h-52 object-cover rounded-xl border border-slate-200"
+                                    className="w-full h-52 item-image zoomable rounded-xl border border-slate-200"
                                     onError={(
                                         event
                                     ) => {

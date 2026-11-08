@@ -811,7 +811,7 @@ function CustomerMatchDetail() {
                                         <img
                                             src={getImageUrl(lostItem.image)}
                                             alt={lostItem.item_name || "Lost item"}
-                                            className="w-full h-72 object-cover rounded-2xl border border-slate-200"
+                                            className="w-full h-72 item-image zoomable rounded-2xl border border-slate-200"
                                         />
                                     ) : (
                                         <div className="w-full h-72 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400">
@@ -882,7 +882,7 @@ function CustomerMatchDetail() {
                                         <img
                                             src={getImageUrl(foundItem.image)}
                                             alt={foundItem.item_name || "Found item"}
-                                            className="w-full h-72 object-cover rounded-2xl border border-slate-200"
+                                            className="w-full h-72 item-image zoomable rounded-2xl border border-slate-200"
                                         />
                                     ) : (
                                         <div className="w-full h-72 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400">

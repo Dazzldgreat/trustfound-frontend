@@ -716,7 +716,7 @@ function ApprovedMatchDetail() {
                                         match.lost_item.item_name ||
                                         "Lost item"
                                     }
-                                    className="w-full h-72 object-cover mb-6"
+                                    className="w-full h-72 item-image zoomable mb-6"
                                     style={{
                                         borderRadius: `${websiteSettings.border_radius}px`,
                                         border: `${websiteSettings.border_width}px ${websiteSettings.border_style} ${websiteSettings.border_line_color}`,
@@ -835,7 +835,7 @@ function ApprovedMatchDetail() {
                                         match.found_item.item_name ||
                                         "Found item"
                                     }
-                                    className="w-full h-72 object-cover mb-6"
+                                    className="w-full h-72 item-image zoomable mb-6"
                                     style={{
                                         borderRadius: `${websiteSettings.border_radius}px`,
                                         border: `${websiteSettings.border_width}px ${websiteSettings.border_style} ${websiteSettings.border_line_color}`,

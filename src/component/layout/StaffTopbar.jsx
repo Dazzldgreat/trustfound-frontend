@@ -351,7 +351,7 @@ function StaffTopbar({
                                     sm:w-11
                                     sm:h-11
                                     rounded-xl
-                                    object-cover
+                                    object-contain
                                     border
                                     border-slate-200
                                     shadow-sm

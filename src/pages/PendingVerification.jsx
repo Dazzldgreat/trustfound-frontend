@@ -839,7 +839,7 @@ function PendingVerification() {
                                                     item.item_name ||
                                                     "Found item"
                                                 }
-                                                className="w-full h-32 object-cover"
+                                                className="w-full h-32 item-image"
                                                 onError={(
                                                     event
                                                 ) => {

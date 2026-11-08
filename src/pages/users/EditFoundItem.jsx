@@ -748,7 +748,7 @@ function EditFoundItem() {
                   <img
                     src={getImageUrl(currentImage)}
                     alt="Current found item"
-                    className="w-48 h-48 object-cover rounded-xl border"
+                    className="w-48 h-48 item-image zoomable rounded-xl border"
                     style={{
                       borderColor:
                         "var(--company-border-line-color)",

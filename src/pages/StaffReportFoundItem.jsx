@@ -1351,7 +1351,7 @@ function StaffReportFoundItem() {
                                     <img
                                         src={imagePreview}
                                         alt="Item preview"
-                                        className="w-full max-h-72 object-cover rounded-xl border border-slate-200 dark:border-slate-700"
+                                        className="w-full max-h-72 item-image zoomable rounded-xl border border-slate-200 dark:border-slate-700"
                                     />
 
 

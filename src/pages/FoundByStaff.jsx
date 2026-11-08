@@ -543,7 +543,7 @@ function StaffFoundItem() {
                                     <img
                                         src={companyLogoUrl}
                                         alt={`${companyName} logo`}
-                                        className="w-full h-full object-cover"
+                                        className="w-full h-full item-image"
                                         onError={(event) => {
                                             event.currentTarget.style.display =
                                                 "none";
@@ -1037,7 +1037,7 @@ function StaffFoundItem() {
                                             <img
                                                 src={companyLogoUrl}
                                                 alt={`${companyName} logo`}
-                                                className="w-full h-full object-cover"
+                                                className="w-full h-full item-image"
                                                 onError={(event) => {
                                                     event.currentTarget.style.display =
                                                         "none";

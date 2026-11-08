@@ -767,7 +767,7 @@ function LostItemDetails() {
                                 <img
                                     src={imageUrl}
                                     alt={`${report.item_name || "Lost item"} image`}
-                                    className="w-full max-h-[520px] object-cover shadow-lg"
+                                    className="w-full max-h-[520px] item-image zoomable shadow-lg"
                                     style={{
                                         borderRadius: `${websiteSettings.border_radius}px`,
                                         border: `${websiteSettings.border_width}px ${websiteSettings.border_style} ${websiteSettings.border_line_color}`,

@@ -708,7 +708,7 @@ function FoundSuccess() {
                                 <img
                                     src={getImageUrl(item.image)}
                                     alt={item.item_name || "Found item"}
-                                    className="w-full h-80 object-cover"
+                                    className="w-full h-80 item-image zoomable"
                                     style={{
                                         borderRadius: "var(--site-radius)",
                                         border: "var(--site-border-width) var(--site-border-style) var(--site-border-line)",

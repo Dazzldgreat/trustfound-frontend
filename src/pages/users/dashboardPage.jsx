@@ -1634,7 +1634,7 @@ function DashboardPage() {
                                                                 report.item_name ||
                                                                 "Item"
                                                             }
-                                                            className="w-14 h-14 rounded-xl object-cover"
+                                                            className="w-14 h-14 rounded-xl item-image"
                                                             style={{
                                                                 border: `${websiteSettings.border_width}px ${websiteSettings.border_style} ${websiteSettings.border_line_color}`,
                                                             }}
@@ -1760,7 +1760,7 @@ function DashboardPage() {
                                                                 report.item_name ||
                                                                 "Item"
                                                             }
-                                                            className="w-20 h-20 rounded-xl object-cover flex-shrink-0"
+                                                            className="w-20 h-20 rounded-xl item-image flex-shrink-0"
                                                             style={{
                                                                 border: `${websiteSettings.border_width}px ${websiteSettings.border_style} ${websiteSettings.border_line_color}`,
                                                             }}

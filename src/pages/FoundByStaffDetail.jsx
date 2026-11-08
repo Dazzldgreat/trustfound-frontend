@@ -377,7 +377,7 @@ function FoundByStaffDetail() {
                                 <img
                                     src={item.image}
                                     alt={item.item_name || "Found item"}
-                                    className="rounded-2xl shadow-lg w-full max-h-[550px] object-cover"
+                                    className="rounded-2xl shadow-lg w-full max-h-[550px] item-image zoomable"
                                 />
                             ) : (
                                 <div className="h-96 w-full rounded-2xl bg-gray-200 dark:bg-slate-800 flex flex-col items-center justify-center">

@@ -381,7 +381,7 @@ function StaffSidebar({
                                         w-11
                                         h-11
                                         rounded-xl
-                                        object-cover
+                                        object-contain
                                         bg-white
                                         p-1
                                         shadow-lg

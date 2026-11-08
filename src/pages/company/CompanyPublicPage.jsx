@@ -461,7 +461,7 @@ export default function CompanyPublicPage() {
                             <img
                                 src={logoUrl}
                                 alt={`${companyName} logo`}
-                                className="h-12 w-12 shrink-0 rounded-xl object-cover"
+                                className="h-12 w-12 shrink-0 rounded-xl object-contain bg-white p-0.5"
                                 onError={(event) => {
                                     event.currentTarget.style.display =
                                         "none";

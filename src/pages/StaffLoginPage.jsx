@@ -1115,7 +1115,7 @@ function StaffLoginPage() {
             <img
               src={companyLogo}
               alt={companyName}
-              className="w-24 h-24 rounded-2xl object-cover mx-auto mb-5 bg-white p-1"
+              className="w-24 h-24 rounded-2xl object-contain mx-auto mb-5 bg-white p-1"
             />
           ) : (
             <div className="w-24 h-24 rounded-2xl bg-blue-600 flex items-center justify-center mx-auto mb-5 text-4xl font-black">

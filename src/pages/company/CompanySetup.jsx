@@ -283,7 +283,7 @@ export default function CompanySetup() {
                     <img
                       src={preview}
                       alt="Organization logo preview"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                     />
                   ) : (
                     <span className="text-slate-400 text-xs text-center px-2">

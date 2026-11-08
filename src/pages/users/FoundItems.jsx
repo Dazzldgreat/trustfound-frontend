@@ -612,7 +612,7 @@ function FoundItem() {
                 <img
                   src={imagePreview}
                   alt="Found item preview"
-                  className="w-56 h-56 rounded-xl object-cover border mb-5"
+                  className="w-56 h-56 rounded-xl item-image zoomable border mb-5"
                   style={{
                     borderColor: "var(--site-border-line)",
                     borderWidth: "var(--site-border-width)",

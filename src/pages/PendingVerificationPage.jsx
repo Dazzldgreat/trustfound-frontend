@@ -814,7 +814,7 @@ function PendingVerificationPage() {
                                                 item?.item_name ||
                                                 "Found item"
                                             }
-                                            className="w-full h-36 object-cover"
+                                            className="w-full h-36 item-image"
                                             onError={(event) => {
 
                                                 event.currentTarget.style.display =

@@ -580,7 +580,7 @@ function StaffMatchDetail() {
                   lostItem.item_name ||
                   "Lost item"
                 }
-                className="w-full h-72 object-cover rounded-lg mb-5"
+                className="w-full h-72 item-image zoomable rounded-lg mb-5"
                 onError={(event) => {
                   event.currentTarget.style.display = "none";
                   const fallback = event.currentTarget.nextElementSibling;
@@ -646,7 +646,7 @@ function StaffMatchDetail() {
                   foundItem.item_name ||
                   "Found item"
                 }
-                className="w-full h-72 object-cover rounded-lg mb-5"
+                className="w-full h-72 item-image zoomable rounded-lg mb-5"
                 onError={(event) => {
                   event.currentTarget.style.display = "none";
                   const fallback = event.currentTarget.nextElementSibling;

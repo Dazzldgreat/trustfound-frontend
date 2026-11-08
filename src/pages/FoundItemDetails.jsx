@@ -422,7 +422,7 @@ function FoundItemDetails() {
                                         item.item_name ||
                                         "Found item"
                                     } image`}
-                                    className="w-full max-h-[520px] object-cover rounded-2xl shadow-lg"
+                                    className="w-full max-h-[520px] item-image zoomable rounded-2xl shadow-lg"
                                 />
                             ) : (
                                 <div className="text-center">

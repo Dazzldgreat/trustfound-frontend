@@ -778,7 +778,7 @@ export default function CompanyDashboard() {
               <img
                 src={company.logo_url || company.logo}
                 alt={companyName}
-                className="h-12 w-12 rounded-2xl border border-slate-200 object-cover"
+                className="h-12 w-12 rounded-2xl border border-slate-200 object-contain bg-white p-0.5"
               />
             ) : (
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-xl font-black text-white">

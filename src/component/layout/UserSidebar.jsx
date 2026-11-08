@@ -10,7 +10,6 @@ import {
     Archive,
     Bell,
     LogOut,
-    Building2,
     ChevronRight,
     UserRound,
 } from "lucide-react";
@@ -346,18 +345,30 @@ export default function UserSidebar({
         };
     }, [activeCompanySlug]);
 
+    // ============================================================
+    // SIDEBAR COLOURS
+    // The sidebar follows the company theme (secondary colour for
+    // the panel, primary colour for the active item). Text colour is
+    // picked automatically so it stays readable on any background.
+    // ============================================================
+
     const primaryColor = settings.primary_color;
-    const secondaryColor = settings.secondary_color;
-    const backgroundColor = settings.background_color;
-
-    // Fill colour inside bordered elements.
-    const borderColor = settings.border_color;
-
-    // Colour of the actual border outline.
-    const borderLineColor = settings.border_line_color;
-
-    const borderStyle = settings.border_style;
-    const borderWidth = settings.border_width;
+    const panelColor = settings.secondary_color;
+    const panelIsLight = isLightColor(panelColor);
+    const panelText = readableTextColor(panelColor);
+    const panelMuted = panelIsLight
+        ? withAlpha(BRAND.graphite, 0.6)
+        : "rgba(255, 255, 255, 0.6)";
+    const panelSoft = panelIsLight
+        ? withAlpha(BRAND.graphite, 0.06)
+        : "rgba(255, 255, 255, 0.07)";
+    const panelHover = panelIsLight
+        ? withAlpha(BRAND.graphite, 0.08)
+        : "rgba(255, 255, 255, 0.1)";
+    const panelDivider = panelIsLight
+        ? withAlpha(BRAND.graphite, 0.1)
+        : "rgba(255, 255, 255, 0.1)";
+    const activeText = readableTextColor(primaryColor);
 
     const companyLogo = getImageUrl(
         activeCompany?.logo_url || activeCompany?.logo
@@ -443,122 +454,109 @@ export default function UserSidebar({
         },
     ];
 
-    const outlineStyle = {
-        borderColor: borderLineColor,
-        borderStyle,
-        borderWidth: `${borderWidth}px`,
-    };
 
     return (
         <>
             {/* MOBILE OVERLAY */}
             {sidebarOpen && (
                 <div
-                    className="fixed inset-0 z-40 backdrop-blur-sm md:hidden"
-                    style={{
-                        backgroundColor: "rgba(28, 25, 23, 0.6)",
-                    }}
+                    className="fixed inset-0 z-40 bg-stone-900/50 backdrop-blur-sm md:hidden"
                     onClick={closeSidebar}
                 />
             )}
 
             {/* SIDEBAR */}
             <aside
-                className={`
-                    fixed md:sticky
-                    top-0 left-0 z-50
-                    flex h-screen w-72 flex-col
-                    overflow-hidden shadow-2xl
-                    transition-transform duration-300 ease-in-out
-                    ${
-                        sidebarOpen
-                            ? "translate-x-0"
-                            : "-translate-x-full md:translate-x-0"
-                    }
-                `}
+                className={`fixed left-0 top-0 z-50 flex h-screen w-72 flex-col overflow-hidden shadow-2xl transition-[transform,background-color] duration-300 ease-in-out md:sticky md:shadow-none ${
+                    sidebarOpen
+                        ? "translate-x-0"
+                        : "-translate-x-full md:translate-x-0"
+                }`}
                 style={{
-                    backgroundColor: secondaryColor,
-                    color: "#ffffff",
+                    backgroundColor: panelColor,
+                    color: panelText,
+                    "--sb-hover": panelHover,
                 }}
             >
                 {/* COMPANY HEADER */}
                 <div
-                    className="px-5 pb-5 pt-6"
-                    style={{
-                        borderBottom: `${borderWidth}px ${borderStyle} ${borderLineColor}`,
-                    }}
+                    className="flex items-center justify-between px-5 pb-5 pt-6"
+                    style={{ borderBottom: `1px solid ${panelDivider}` }}
                 >
-                    <div className="flex items-center justify-between">
-                        <div className="flex min-w-0 items-center gap-3">
-                            {companyLogo ? (
-                                <img
-                                    src={companyLogo}
-                                    alt={activeCompany?.name || "Company"}
-                                    className="h-12 w-12 shrink-0 rounded-xl object-cover shadow-sm"
-                                    style={{
-                                        ...outlineStyle,
-                                        backgroundColor: borderColor,
-                                    }}
-                                    onError={(event) => {
-                                        event.currentTarget.style.display = "none";
-                                    }}
-                                />
-                            ) : (
-                                <div
-                                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-lg font-black shadow-lg"
-                                    style={{
-                                        backgroundColor: primaryColor,
-                                        color: "#ffffff",
-                                        ...outlineStyle,
-                                    }}
-                                >
-                                    {activeCompany?.name
-                                        ?.substring(0, 2)
-                                        .toUpperCase() || "CO"}
-                                </div>
-                            )}
-
-                            <div className="min-w-0">
-                                <p
-                                    className="text-[11px] font-bold uppercase tracking-widest"
-                                    style={{ color: "#D6CEC6" }}
-                                >
-                                    Organization
-                                </p>
-
-                                <h1 className="mt-1 truncate text-base font-bold">
-                                    {activeCompany?.name || "TrustFound"}
-                                </h1>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            if (activeCompanySlug) {
+                                navigate(
+                                    `/company/${encodeURIComponent(
+                                        activeCompanySlug
+                                    )}`
+                                );
+                                closeSidebar();
+                            }
+                        }}
+                        className="flex min-w-0 items-center gap-3 text-left"
+                        title="Open organisation page"
+                    >
+                        {companyLogo ? (
+                            <img
+                                src={companyLogo}
+                                alt={activeCompany?.name || "Company"}
+                                className="h-11 w-11 shrink-0 rounded-xl bg-white object-contain p-1 shadow-sm"
+                                onError={(event) => {
+                                    event.currentTarget.style.display =
+                                        "none";
+                                }}
+                            />
+                        ) : (
+                            <div
+                                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-sm font-extrabold shadow-sm"
+                                style={{
+                                    backgroundColor: primaryColor,
+                                    color: activeText,
+                                }}
+                            >
+                                {activeCompany?.name
+                                    ?.substring(0, 2)
+                                    .toUpperCase() || "TF"}
                             </div>
-                        </div>
+                        )}
 
-                        <button
-                            type="button"
-                            onClick={closeSidebar}
-                            className="rounded-lg p-2 transition md:hidden"
-                            style={{ color: "#D6CEC6" }}
-                            aria-label="Close sidebar"
-                        >
-                            <X size={22} />
-                        </button>
-                    </div>
+                        <div className="min-w-0">
+                            <p
+                                className="text-[11px] font-bold uppercase tracking-widest"
+                                style={{ color: panelMuted }}
+                            >
+                                Organisation
+                            </p>
+                            <h1 className="mt-0.5 truncate text-base font-bold">
+                                {activeCompany?.name || "TrustFound"}
+                            </h1>
+                        </div>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={closeSidebar}
+                        className="rounded-lg p-2 transition hover:bg-[var(--sb-hover)] md:hidden"
+                        style={{ color: panelMuted }}
+                        aria-label="Close sidebar"
+                    >
+                        <X size={22} />
+                    </button>
                 </div>
 
                 {/* USER PROFILE */}
-                <div className="px-5 py-4">
+                <div className="px-4 py-4">
                     <div
-                        className="flex items-center gap-3 rounded-xl px-3 py-3"
-                        style={{
-                            // Fill and outline are separate settings.
-                            backgroundColor: borderColor,
-                            ...outlineStyle,
-                        }}
+                        className="flex items-center gap-3 rounded-2xl px-3 py-3"
+                        style={{ backgroundColor: panelSoft }}
                     >
                         <div
                             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
                             style={{
                                 backgroundColor: primaryColor,
-                                color: "#ffffff",
+                                color: activeText,
                             }}
                         >
                             <UserRound size={19} />
@@ -567,15 +565,11 @@ export default function UserSidebar({
                         <div className="min-w-0">
                             <p
                                 className="text-xs"
-                                style={{ color: secondaryColor }}
+                                style={{ color: panelMuted }}
                             >
                                 Signed in as
                             </p>
-
-                            <p
-                                className="truncate text-sm font-semibold"
-                                style={{ color: secondaryColor }}
-                            >
+                            <p className="truncate text-sm font-semibold">
                                 {displayName}
                             </p>
                         </div>
@@ -583,14 +577,12 @@ export default function UserSidebar({
                 </div>
 
                 {/* NAVIGATION LABEL */}
-                <div className="px-5 pt-2">
-                    <p
-                        className="mb-3 px-3 text-[11px] font-bold uppercase tracking-widest"
-                        style={{ color: "#A8A29E" }}
-                    >
-                        Customer Portal
-                    </p>
-                </div>
+                <p
+                    className="px-7 pb-2 pt-1 text-[11px] font-bold uppercase tracking-widest"
+                    style={{ color: panelMuted }}
+                >
+                    Customer portal
+                </p>
 
                 {/* NAVIGATION */}
                 <nav className="flex-1 space-y-1 overflow-y-auto px-4 pb-5">
@@ -601,76 +593,53 @@ export default function UserSidebar({
                             <NavLink
                                 key={menu.name}
                                 to={menu.path}
+                                end
                                 onClick={closeSidebar}
-                                className="group relative flex items-center gap-3 rounded-xl px-3 py-3 transition-all duration-200"
-                                style={({ isActive }) => ({
-                                    backgroundColor: isActive
-                                        ? primaryColor
-                                        : "transparent",
-                                    color: "#ffffff",
-                                })}
-                                onMouseEnter={(event) => {
-                                    if (
-                                        !event.currentTarget.getAttribute(
-                                            "aria-current"
-                                        )
-                                    ) {
-                                        event.currentTarget.style.backgroundColor =
-                                            borderColor;
-                                        event.currentTarget.style.color =
-                                            secondaryColor;
-                                    }
-                                }}
-                                onMouseLeave={(event) => {
-                                    if (
-                                        !event.currentTarget.getAttribute(
-                                            "aria-current"
-                                        )
-                                    ) {
-                                        event.currentTarget.style.backgroundColor =
-                                            "transparent";
-                                        event.currentTarget.style.color =
-                                            "#ffffff";
-                                    }
-                                }}
+                                className={({ isActive }) =>
+                                    `group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors duration-200 ${
+                                        isActive
+                                            ? "shadow-md"
+                                            : "hover:bg-[var(--sb-hover)]"
+                                    }`
+                                }
+                                style={({ isActive }) =>
+                                    isActive
+                                        ? {
+                                              backgroundColor: primaryColor,
+                                              color: activeText,
+                                          }
+                                        : { color: panelText }
+                                }
                             >
                                 {({ isActive }) => (
                                     <>
-                                        {isActive && (
-                                            <span
-                                                className="absolute bottom-2 left-0 top-2 w-1 rounded-r-full"
-                                                style={{
-                                                    backgroundColor: "#ffffff",
-                                                }}
-                                            />
-                                        )}
-
                                         <div
-                                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition"
+                                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition"
                                             style={{
                                                 backgroundColor: isActive
-                                                    ? "rgba(255,255,255,0.15)"
-                                                    : backgroundColor,
+                                                    ? "rgba(255,255,255,0.18)"
+                                                    : panelSoft,
                                                 color: isActive
-                                                    ? "#ffffff"
+                                                    ? activeText
                                                     : primaryColor,
-                                                border: `${borderWidth}px ${borderStyle} ${borderLineColor}`,
                                             }}
                                         >
-                                            <Icon size={19} />
+                                            <Icon size={18} />
                                         </div>
 
                                         <div className="min-w-0 flex-1">
                                             <p className="truncate text-sm font-semibold">
                                                 {menu.name}
                                             </p>
-
                                             <p
-                                                className="mt-0.5 truncate text-[11px]"
+                                                className="truncate text-[11px]"
                                                 style={{
                                                     color: isActive
-                                                        ? "#ffffff"
-                                                        : "#D6CEC6",
+                                                        ? activeText
+                                                        : panelMuted,
+                                                    opacity: isActive
+                                                        ? 0.85
+                                                        : 1,
                                                 }}
                                             >
                                                 {menu.description}
@@ -682,7 +651,7 @@ export default function UserSidebar({
                                             className={`shrink-0 transition ${
                                                 isActive
                                                     ? "opacity-100"
-                                                    : "opacity-0 group-hover:opacity-70"
+                                                    : "opacity-0 group-hover:opacity-60"
                                             }`}
                                         />
                                     </>
@@ -692,79 +661,18 @@ export default function UserSidebar({
                     })}
                 </nav>
 
-                {/* COMPANY INFORMATION */}
-                {activeCompany && (
-                    <div className="px-4 pb-4">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                if (activeCompanySlug) {
-                                    navigate(
-                                        `/company/${encodeURIComponent(
-                                            activeCompanySlug
-                                        )}`
-                                    );
-                                    closeSidebar();
-                                }
-                            }}
-                            disabled={!activeCompanySlug}
-                            className="w-full rounded-xl p-3 text-left transition disabled:cursor-not-allowed"
-                            style={{
-                                backgroundColor: borderColor,
-                                ...outlineStyle,
-                            }}
-                        >
-                            <div className="flex items-center gap-3">
-                                <div
-                                    className="flex h-9 w-9 items-center justify-center rounded-lg"
-                                    style={{
-                                        backgroundColor,
-                                        color: primaryColor,
-                                        border: `${borderWidth}px ${borderStyle} ${borderLineColor}`,
-                                    }}
-                                >
-                                    <Building2 size={17} />
-                                </div>
-
-                                <div className="min-w-0 flex-1">
-                                    <p
-                                        className="text-[10px] font-bold uppercase tracking-wider"
-                                        style={{ color: secondaryColor }}
-                                    >
-                                        Active organization
-                                    </p>
-
-                                    <p
-                                        className="mt-1 truncate text-sm font-semibold"
-                                        style={{ color: secondaryColor }}
-                                    >
-                                        {activeCompany.name || "TrustFound"}
-                                    </p>
-                                </div>
-
-                                <ChevronRight
-                                    size={16}
-                                    style={{ color: secondaryColor }}
-                                />
-                            </div>
-                        </button>
-                    </div>
-                )}
-
                 {/* LOGOUT */}
                 <div
                     className="p-4"
-                    style={{
-                        borderTop: `${borderWidth}px ${borderStyle} ${borderLineColor}`,
-                    }}
+                    style={{ borderTop: `1px solid ${panelDivider}` }}
                 >
                     <button
                         type="button"
                         onClick={logout}
-                        className="flex w-full items-center justify-center gap-3 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-400 transition-all duration-200 hover:border-red-500 hover:bg-red-500 hover:text-white"
+                        className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-500 transition hover:border-red-500 hover:bg-red-500 hover:text-white"
                     >
                         <LogOut size={18} />
-                        <span>Sign Out</span>
+                        Sign out
                     </button>
                 </div>
             </aside>

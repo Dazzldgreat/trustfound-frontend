@@ -578,7 +578,7 @@ function StaffFoundItemDetail() {
                 <img
                   src={imageUrl}
                   alt={item.item_name}
-                  className="w-full h-[450px] object-cover"
+                  className="w-full h-[450px] item-image zoomable"
                 />
 
               ) : (

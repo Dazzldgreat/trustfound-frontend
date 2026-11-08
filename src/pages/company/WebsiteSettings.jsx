@@ -19,45 +19,20 @@ import {
   RotateCcw,
 } from "lucide-react";
 
-import { API, API_BASE_URL } from "../../config";
+import { API } from "../../config";
+import {
+  DEFAULT_WEBSITE_SETTINGS,
+  resolveMediaUrl,
+} from "../../theme";
+
 // ============================================================
 // TRUSTFOUND DEFAULT SETTINGS
-// Keep these as the values used by Restore Defaults.
+// The Orange & Graphite defaults used by Restore Defaults.
+// Defined once in src/theme.js and mirrored by the backend
+// model defaults (accounts.models.CompanyWebsiteSettings).
 // ============================================================
 
-const DEFAULT_SETTINGS = {
-  hero_title: "Welcome to our Lost & Found",
-  hero_subtitle:
-    "Helping our community reconnect with the things that matter.",
-
-  about_title: "About our service",
-  about_text:
-    "We help people report lost belongings, register found items, and reconnect owners with their property.",
-
-  template: "modern",
-
-  primary_color: "#EA580C",
-  secondary_color: "#292524",
-  background_color: "#FFF7ED",
-
-  // Fill/background INSIDE bordered elements
-  border_color: "#ffffff",
-
-  // Actual visible border outline/line
-  border_line_color: "#E9E1D8",
-
-  border_style: "solid",
-  border_width: 1,
-
-  show_about: true,
-  show_featured_items: true,
-  show_contact: true,
-
-  footer_text: "Helping people find what matters.",
-  is_published: false,
-
-  logo: null,
-};
+const DEFAULT_SETTINGS = DEFAULT_WEBSITE_SETTINGS;
 
 // ============================================================
 // STORAGE
@@ -175,23 +150,7 @@ function getHexRgb(hex) {
   ].join(" ");
 }
 
-function getImageUrl(value) {
-  if (!value || typeof value !== "string") {
-    return "";
-  }
-
-  if (
-    /^https?:\/\//i.test(value) ||
-    value.startsWith("data:") ||
-    value.startsWith("blob:")
-  ) {
-    return value;
-  }
-
-  return `${API_BASE_URL}${
-    value.startsWith("/") ? "" : "/"
-  }${value}`;
-}
+const getImageUrl = resolveMediaUrl;
 
 function getResponseError(data, fallback) {
   if (!data || typeof data !== "object") {
@@ -778,9 +737,13 @@ function WebsiteSettings() {
 
     if (!confirmed) return;
 
-    if (logoPreview?.startsWith("blob:")) {
-      URL.revokeObjectURL(logoPreview);
-    }
+    // Snapshot the current state so a failed save can be undone.
+    const previous = {
+      settings,
+      logoFile,
+      logoPreview,
+      logoRemoved,
+    };
 
     const defaults = normalizeSettings({
       ...DEFAULT_SETTINGS,
@@ -795,7 +758,7 @@ function WebsiteSettings() {
     setError("");
     setSuccess("");
 
-    // Update the local theme immediately.
+    // Update the local theme (sidebar, buttons) immediately.
     applyCompanyTheme(
       defaults,
       activeCompanySlug
@@ -804,12 +767,27 @@ function WebsiteSettings() {
     // Persist the defaults and remove the saved logo.
     // The save uses the defaults object directly rather than
     // relying on React state to update before the request.
-    await saveSettings(false, {
+    const saved = await saveSettings(false, {
       settings: defaults,
       removeLogo: true,
       successMessage:
-        "TrustFound default settings have been restored and saved successfully.",
+        "TrustFound default settings (Orange & Graphite) have been restored and saved.",
     });
+
+    if (saved) {
+      if (previous.logoPreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(previous.logoPreview);
+      }
+      return;
+    }
+
+    // Save failed: put everything back the way it was so the
+    // screen never shows defaults that were not actually saved.
+    setSettings(previous.settings);
+    setLogoFile(previous.logoFile);
+    setLogoPreview(previous.logoPreview);
+    setLogoRemoved(previous.logoRemoved);
+    applyCompanyTheme(previous.settings, activeCompanySlug);
   };
 
   // ============================================================

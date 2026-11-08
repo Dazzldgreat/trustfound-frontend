@@ -740,7 +740,7 @@ function RecoverItem() {
                                             match.lost_item.item_name ||
                                             "Lost item"
                                         }
-                                        className="w-full h-48 object-cover rounded-xl"
+                                        className="w-full h-48 item-image zoomable rounded-xl"
                                     />
 
                                 ) : (
@@ -816,7 +816,7 @@ function RecoverItem() {
                                             match.found_item.item_name ||
                                             "Found item"
                                         }
-                                        className="w-full h-48 object-cover rounded-xl"
+                                        className="w-full h-48 item-image zoomable rounded-xl"
                                     />
 
                                 ) : (

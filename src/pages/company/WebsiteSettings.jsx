@@ -19,7 +19,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 
-import { API } from "../../config";
+import { API, API_BASE_URL } from "../../config";
 // ============================================================
 // TRUSTFOUND DEFAULT SETTINGS
 // Keep these as the values used by Restore Defaults.
@@ -36,15 +36,15 @@ const DEFAULT_SETTINGS = {
 
   template: "modern",
 
-  primary_color: "#2563eb",
-  secondary_color: "#0f172a",
-  background_color: "#f8fafc",
+  primary_color: "#EA580C",
+  secondary_color: "#292524",
+  background_color: "#FFF7ED",
 
   // Fill/background INSIDE bordered elements
   border_color: "#ffffff",
 
   // Actual visible border outline/line
-  border_line_color: "#e2e8f0",
+  border_line_color: "#E9E1D8",
 
   border_style: "solid",
   border_width: 1,
@@ -188,7 +188,7 @@ function getImageUrl(value) {
     return value;
   }
 
-  return `https://trustfound-backend.onrender.com${
+  return `${API_BASE_URL}${
     value.startsWith("/") ? "" : "/"
   }${value}`;
 }
@@ -905,7 +905,7 @@ function WebsiteSettings() {
   const inputStyle = {
     ...borderPreviewStyle,
     borderRadius: "0.75rem",
-    color: "#1e293b",
+    color: "#292524",
   };
 
   const lineOnlyStyle = {
@@ -931,7 +931,7 @@ function WebsiteSettings() {
           className="animate-spin"
           size={36}
           style={{
-            color: "var(--company-primary, #2563eb)",
+            color: "var(--company-primary, #EA580C)",
           }}
         />
       </div>
@@ -947,7 +947,7 @@ function WebsiteSettings() {
       className="min-h-screen text-slate-800"
       style={{
         backgroundColor:
-          settings.background_color || "#f8fafc",
+          settings.background_color || "#FFF7ED",
       }}
     >
       {/* HEADER */}
@@ -990,14 +990,14 @@ function WebsiteSettings() {
                 className="flex h-11 w-11 items-center justify-center rounded-xl"
                 style={{
                   backgroundColor:
-                    "rgb(var(--company-primary-rgb, 37 99 235) / 10%)",
+                    "rgb(var(--company-primary-rgb, 234 88 12) / 10%)",
                   ...lineOnlyStyle,
                 }}
               >
                 <Globe
                   size={22}
                   style={{
-                    color: "var(--company-primary, #2563eb)",
+                    color: "var(--company-primary, #EA580C)",
                   }}
                 />
               </div>
@@ -1044,7 +1044,7 @@ function WebsiteSettings() {
                   settings.border_line_color ||
                   DEFAULT_SETTINGS.border_line_color,
                 color:
-                  settings.secondary_color || "#0f172a",
+                  settings.secondary_color || "#292524",
               }}
             >
               {saving ? (
@@ -1102,13 +1102,13 @@ function WebsiteSettings() {
                 className="rounded-xl p-3"
                 style={{
                   backgroundColor:
-                    "rgb(var(--company-primary-rgb, 37 99 235) / 10%)",
+                    "rgb(var(--company-primary-rgb, 234 88 12) / 10%)",
                 }}
               >
                 <Type
                   size={21}
                   style={{
-                    color: "var(--company-primary, #2563eb)",
+                    color: "var(--company-primary, #EA580C)",
                   }}
                 />
               </div>
@@ -1225,7 +1225,7 @@ function WebsiteSettings() {
               <Palette
                 size={23}
                 style={{
-                  color: "var(--company-primary, #2563eb)",
+                  color: "var(--company-primary, #EA580C)",
                 }}
               />
               <div>
@@ -1241,12 +1241,12 @@ function WebsiteSettings() {
                 {
                   field: "primary_color",
                   label: "Primary colour",
-                  fallback: "#2563eb",
+                  fallback: "#EA580C",
                 },
                 {
                   field: "secondary_color",
                   label: "Secondary colour",
-                  fallback: "#0f172a",
+                  fallback: "#292524",
                 },
               ].map((item) => (
                 <div key={item.field}>
@@ -1287,7 +1287,7 @@ function WebsiteSettings() {
               <Palette
                 size={23}
                 style={{
-                  color: "var(--company-primary, #2563eb)",
+                  color: "var(--company-primary, #EA580C)",
                 }}
               />
               <div>
@@ -1317,7 +1317,7 @@ function WebsiteSettings() {
                     id="background_color"
                     type="color"
                     value={
-                      settings.background_color || "#f8fafc"
+                      settings.background_color || "#FFF7ED"
                     }
                     onChange={(e) =>
                       updateField(
@@ -1328,7 +1328,7 @@ function WebsiteSettings() {
                     className="h-10 w-12 cursor-pointer"
                   />
                   <span className="text-sm font-medium uppercase">
-                    {settings.background_color || "#f8fafc"}
+                    {settings.background_color || "#FFF7ED"}
                   </span>
                 </div>
               </div>
@@ -1417,7 +1417,7 @@ function WebsiteSettings() {
                     id="border_line_color"
                     type="color"
                     value={
-                      settings.border_line_color || "#e2e8f0"
+                      settings.border_line_color || "#E9E1D8"
                     }
                     onChange={(e) =>
                       updateField(
@@ -1428,7 +1428,7 @@ function WebsiteSettings() {
                     className="h-10 w-12 cursor-pointer"
                   />
                   <span className="text-sm font-medium uppercase">
-                    {settings.border_line_color || "#e2e8f0"}
+                    {settings.border_line_color || "#E9E1D8"}
                   </span>
                 </div>
                 <p className="mt-2 text-xs text-slate-500">
@@ -1450,8 +1450,8 @@ function WebsiteSettings() {
                     className="rounded-lg px-3 py-1 text-sm font-bold"
                     style={{
                       backgroundColor:
-                        "rgb(var(--company-primary-rgb, 37 99 235) / 10%)",
-                      color: "var(--company-primary, #2563eb)",
+                        "rgb(var(--company-primary-rgb, 234 88 12) / 10%)",
+                      color: "var(--company-primary, #EA580C)",
                     }}
                   >
                     {settings.border_width ?? 1}px
@@ -1472,7 +1472,7 @@ function WebsiteSettings() {
                   }
                   className="w-full"
                   style={{
-                    accentColor: "var(--company-primary, #2563eb)",
+                    accentColor: "var(--company-primary, #EA580C)",
                   }}
                 />
                 <div className="mt-1 flex justify-between text-xs text-slate-400">
@@ -1501,7 +1501,7 @@ function WebsiteSettings() {
                   <ImageIcon
                     size={18}
                     style={{
-                      color: "var(--company-primary, #2563eb)",
+                      color: "var(--company-primary, #EA580C)",
                     }}
                   />
                   <label
@@ -1553,8 +1553,8 @@ function WebsiteSettings() {
                     className="flex cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold"
                     style={{
                       backgroundColor:
-                        "rgb(var(--company-primary-rgb, 37 99 235) / 10%)",
-                      color: "var(--company-primary, #2563eb)",
+                        "rgb(var(--company-primary-rgb, 234 88 12) / 10%)",
+                      color: "var(--company-primary, #EA580C)",
                     }}
                   >
                     <Upload size={18} />
@@ -1582,7 +1582,7 @@ function WebsiteSettings() {
               <LayoutTemplate
                 size={23}
                 style={{
-                  color: "var(--company-primary, #2563eb)",
+                  color: "var(--company-primary, #EA580C)",
                 }}
               />
               <div>
@@ -1633,10 +1633,10 @@ function WebsiteSettings() {
                         settings.border_width ?? 1
                       }px`,
                       borderColor: selected
-                        ? settings.primary_color || "#2563eb"
-                        : settings.border_line_color || "#e2e8f0",
+                        ? settings.primary_color || "#EA580C"
+                        : settings.border_line_color || "#E9E1D8",
                       backgroundColor: selected
-                        ? "rgb(var(--company-primary-rgb, 37 99 235) / 8%)"
+                        ? "rgb(var(--company-primary-rgb, 234 88 12) / 8%)"
                         : settings.border_color || "#ffffff",
                     }}
                   >
@@ -1649,7 +1649,7 @@ function WebsiteSettings() {
                           size={19}
                           style={{
                             color:
-                              "var(--company-primary, #2563eb)",
+                              "var(--company-primary, #EA580C)",
                           }}
                         />
                       )}
@@ -1698,7 +1698,7 @@ function WebsiteSettings() {
                     settings.border_style
                   ),
                   borderBottomColor:
-                    settings.border_line_color || "#e2e8f0",
+                    settings.border_line_color || "#E9E1D8",
                   borderBottomWidth: `${
                     settings.border_width ?? 1
                   }px`,
@@ -1723,7 +1723,7 @@ function WebsiteSettings() {
                   }
                   className="h-5 w-5 cursor-pointer"
                   style={{
-                    accentColor: "var(--company-primary, #2563eb)",
+                    accentColor: "var(--company-primary, #EA580C)",
                   }}
                 />
               </label>
@@ -1739,7 +1739,7 @@ function WebsiteSettings() {
               <Globe
                 size={22}
                 style={{
-                  color: "var(--company-primary, #2563eb)",
+                  color: "var(--company-primary, #EA580C)",
                 }}
               />
               <h2 className="font-bold">Publishing</h2>
@@ -1824,7 +1824,7 @@ function WebsiteSettings() {
                   settings.border_style
                 ),
                 borderBottomColor:
-                  settings.border_line_color || "#e2e8f0",
+                  settings.border_line_color || "#E9E1D8",
                 borderBottomWidth: `${
                   settings.border_width ?? 1
                 }px`,
@@ -1842,7 +1842,7 @@ function WebsiteSettings() {
                   className="flex h-10 w-10 items-center justify-center rounded-lg"
                   style={{
                     backgroundColor:
-                      settings.primary_color || "#2563eb",
+                      settings.primary_color || "#EA580C",
                   }}
                 >
                   <Square size={19} className="text-white" />
@@ -1864,7 +1864,7 @@ function WebsiteSettings() {
               className="p-6 text-white"
               style={{
                 backgroundColor:
-                  settings.primary_color || "#2563eb",
+                  settings.primary_color || "#EA580C",
               }}
             >
               <p className="mb-3 text-xs font-semibold uppercase tracking-wider opacity-80">
@@ -1887,7 +1887,7 @@ function WebsiteSettings() {
               className="space-y-4 p-5"
               style={{
                 backgroundColor:
-                  settings.background_color || "#f8fafc",
+                  settings.background_color || "#FFF7ED",
               }}
             >
               {settings.show_about && (
@@ -1899,7 +1899,7 @@ function WebsiteSettings() {
                     className="font-bold"
                     style={{
                       color:
-                        settings.secondary_color || "#0f172a",
+                        settings.secondary_color || "#292524",
                     }}
                   >
                     {settings.about_title ||
@@ -1920,7 +1920,7 @@ function WebsiteSettings() {
                   <p
                     className="text-sm font-bold"
                     style={{
-                      color: settings.primary_color || "#2563eb",
+                      color: settings.primary_color || "#EA580C",
                     }}
                   >
                     Lost &amp; Found Items
@@ -1972,7 +1972,7 @@ function WebsiteSettings() {
                 <div className="mt-2 flex items-center justify-between gap-3">
                   <span>Border line colour</span>
                   <strong>
-                    {settings.border_line_color || "#e2e8f0"}
+                    {settings.border_line_color || "#E9E1D8"}
                   </strong>
                 </div>
               </div>

@@ -1826,7 +1826,7 @@ function ColourField({ label, name, value, onChange }) {
         <input
           type="color"
           name={name}
-          value={isValidColour(value) ? value : "#2563eb"}
+          value={isValidColour(value) ? value : "#EA580C"}
           onChange={onChange}
           className="h-12 w-14 cursor-pointer rounded-lg border-0 bg-transparent"
         />
@@ -1836,7 +1836,7 @@ function ColourField({ label, name, value, onChange }) {
           name={name}
           value={value ?? ""}
           onChange={onChange}
-          placeholder="#2563eb"
+          placeholder="#EA580C"
           className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 font-mono outline-none focus:border-blue-500"
         />
       </div>

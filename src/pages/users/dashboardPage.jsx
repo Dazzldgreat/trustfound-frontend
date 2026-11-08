@@ -26,16 +26,16 @@ import {
 
 import { API } from "../../config";
 const DEFAULT_WEBSITE_SETTINGS = {
-    primary_color: "#4f46e5",
-    secondary_color: "#0f172a",
-    background_color: "#f8fafc",
-    text_color: "#475569",
-    heading_color: "#0f172a",
+    primary_color: "#EA580C",
+    secondary_color: "#292524",
+    background_color: "#FFF7ED",
+    text_color: "#57534E",
+    heading_color: "#292524",
     card_color: "#ffffff",
     button_text_color: "#ffffff",
 
     border_color: "#ffffff",
-    border_line_color: "#e2e8f0",
+    border_line_color: "#E9E1D8",
     border_style: "solid",
     border_width: 1,
     border_radius: 16,

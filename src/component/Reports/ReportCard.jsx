@@ -1,6 +1,7 @@
 import React from "react";
+import { API_BASE_URL } from "../../config";
 
-const SERVER = "https://trustfound-backend.onrender.com";
+const SERVER = API_BASE_URL;
 
 function ReportCard({
     report,

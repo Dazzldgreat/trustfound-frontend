@@ -226,7 +226,7 @@ function ResetPasswordPage() {
 
   return (
 
-    <div className="min-h-screen bg-[#f8fbfb] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#FFF7ED] flex items-center justify-center px-4">
 
       <form
         onSubmit={handleReset}

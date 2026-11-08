@@ -20,15 +20,15 @@ import {
 
 import { API } from "../config";
 const DEFAULT_SETTINGS = {
-  primary_color: "#2563eb",
-  secondary_color: "#475569",
-  background_color: "#f8fafc",
-  text_color: "#334155",
-  heading_color: "#0f172a",
+  primary_color: "#EA580C",
+  secondary_color: "#57534E",
+  background_color: "#FFF7ED",
+  text_color: "#44403C",
+  heading_color: "#292524",
   card_color: "#ffffff",
   button_text_color: "#ffffff",
   border_color: "#ffffff",
-  border_line_color: "#e2e8f0",
+  border_line_color: "#E9E1D8",
   border_style: "solid",
   border_width: "1px",
   border_radius: "12px",

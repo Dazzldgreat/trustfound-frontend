@@ -9,6 +9,7 @@ import {
   EyeOff,
   ArrowRight,
 } from "lucide-react";
+import { API } from "../../config";
 
 export default function CompanyRegister() {
   const navigate = useNavigate();
@@ -75,7 +76,7 @@ export default function CompanyRegister() {
       // ==============================
 
       const response = await fetch(
-        "https://trustfound-backend.onrender.com/api/company/register/",
+        `${API}/company/register/`,
         {
           method: "POST",
 

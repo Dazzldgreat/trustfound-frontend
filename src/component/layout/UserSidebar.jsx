@@ -16,17 +16,34 @@ import {
 } from "lucide-react";
 
 import { API } from "../../config";
-const SERVER_ORIGIN = "https://trustfound-backend.onrender.com";
+import {
+    BRAND,
+    isLightColor,
+    readableTextColor,
+    resolveMediaUrl,
+    withAlpha,
+} from "../../theme";
 
 const DEFAULT_SETTINGS = {
-    primary_color: "#2563eb",
-    secondary_color: "#dfe1e8",
-    background_color: "#f8fafc",
-    border_color: "#ffffff",
-    border_line_color: "#e2e8f0",
+    primary_color: BRAND.primary,
+    secondary_color: BRAND.graphite,
+    background_color: BRAND.background,
+    border_color: BRAND.card,
+    border_line_color: BRAND.border,
     border_style: "solid",
     border_width: 1,
 };
+
+// Website Settings caches the live theme under this key; the
+// sidebar keeps its own cache under websiteSettings_<slug>.
+function getCachedTheme(slug) {
+    if (!slug) return getStoredObject("websiteSettings");
+
+    return (
+        getStoredObject(`trustfound_theme_${slug}`) ||
+        getStoredObject(`websiteSettings_${slug}`)
+    );
+}
 
 const ALLOWED_BORDER_STYLES = [
     "none",
@@ -115,18 +132,7 @@ function normalizeSettings(payload) {
     };
 }
 
-function getImageUrl(value) {
-    if (!value || typeof value !== "string") return "";
-
-    if (
-        /^(https?:)?\/\//i.test(value) ||
-        value.startsWith("data:")
-    ) {
-        return value;
-    }
-
-    return `${SERVER_ORIGIN}${value.startsWith("/") ? "" : "/"}${value}`;
-}
+const getImageUrl = resolveMediaUrl;
 
 async function readResponse(response) {
     const contentType = response.headers.get("content-type") || "";
@@ -188,26 +194,15 @@ export default function UserSidebar({
         : "websiteSettings";
 
     const [settings, setSettings] = useState(() =>
-        normalizeSettings(
-            getStoredObject(cacheKey) ||
-            (activeCompanySlug
-                ? {}
-                : getStoredObject("websiteSettings")) ||
-            {}
-        )
+        normalizeSettings(getCachedTheme(activeCompanySlug) || {})
     );
 
     // Reload cached settings immediately when switching companies.
     useEffect(() => {
-        const cached =
-            getStoredObject(
-                activeCompanySlug
-                    ? `websiteSettings_${activeCompanySlug}`
-                    : "websiteSettings"
-            ) || {};
-
-        setSettings(normalizeSettings(cached));
-    }, [activeCompanySlug]);
+        setSettings(
+            normalizeSettings(getCachedTheme(activeCompanySlug) || {})
+        );
+    }, [activeCompanySlug, cacheKey]);
 
     // Load this company's published website settings.
     useEffect(() => {
@@ -298,7 +293,11 @@ export default function UserSidebar({
     useEffect(() => {
         const handleThemeChange = (event) => {
             const changedSlug = event.detail?.companySlug;
-            const newSettings = event.detail?.settings;
+
+            // Website Settings sends the theme flat in event.detail;
+            // older callers nest it under detail.settings.
+            const newSettings =
+                event.detail?.settings || event.detail;
 
             if (!newSettings) return;
 
@@ -457,7 +456,7 @@ export default function UserSidebar({
                 <div
                     className="fixed inset-0 z-40 backdrop-blur-sm md:hidden"
                     style={{
-                        backgroundColor: "rgba(2, 6, 23, 0.6)",
+                        backgroundColor: "rgba(28, 25, 23, 0.6)",
                     }}
                     onClick={closeSidebar}
                 />
@@ -522,7 +521,7 @@ export default function UserSidebar({
                             <div className="min-w-0">
                                 <p
                                     className="text-[11px] font-bold uppercase tracking-widest"
-                                    style={{ color: "#cbd5e1" }}
+                                    style={{ color: "#D6CEC6" }}
                                 >
                                     Organization
                                 </p>
@@ -537,7 +536,7 @@ export default function UserSidebar({
                             type="button"
                             onClick={closeSidebar}
                             className="rounded-lg p-2 transition md:hidden"
-                            style={{ color: "#cbd5e1" }}
+                            style={{ color: "#D6CEC6" }}
                             aria-label="Close sidebar"
                         >
                             <X size={22} />
@@ -587,7 +586,7 @@ export default function UserSidebar({
                 <div className="px-5 pt-2">
                     <p
                         className="mb-3 px-3 text-[11px] font-bold uppercase tracking-widest"
-                        style={{ color: "#94a3b8" }}
+                        style={{ color: "#A8A29E" }}
                     >
                         Customer Portal
                     </p>
@@ -671,7 +670,7 @@ export default function UserSidebar({
                                                 style={{
                                                     color: isActive
                                                         ? "#ffffff"
-                                                        : "#cbd5e1",
+                                                        : "#D6CEC6",
                                                 }}
                                             >
                                                 {menu.description}

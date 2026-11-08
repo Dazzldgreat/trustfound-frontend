@@ -1,8 +1,9 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { API } from "../../config";
 
-const API_URL = "https://trustfound-backend.onrender.com/api";
+const API_URL = API;
 
 export default function CompanySetup() {
   const navigate = useNavigate();

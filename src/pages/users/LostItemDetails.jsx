@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
-import { API } from "../../config";
+import { API, API_BASE_URL } from "../../config";
 const DEFAULT_WEBSITE_SETTINGS = {
-    primary_color: "#2563eb",
-    secondary_color: "#1d4ed8",
-    background_color: "#f3f4f6",
-    text_color: "#374151",
-    heading_color: "#111827",
+    primary_color: "#EA580C",
+    secondary_color: "#C2410C",
+    background_color: "#F6EFE7",
+    text_color: "#44403C",
+    heading_color: "#292524",
     card_color: "#ffffff",
     button_text_color: "#ffffff",
     border_color: "#ffffff",
-    border_line_color: "#e5e7eb",
+    border_line_color: "#E9E1D8",
     border_style: "solid",
     border_width: 1,
     border_radius: 16,
@@ -597,7 +597,7 @@ function LostItemDetails() {
     const imageUrl = report.image
         ? report.image.startsWith("http")
             ? report.image
-            : `https://trustfound-backend.onrender.com${report.image}`
+            : `${API_BASE_URL}${report.image}`
         : null;
 
     // =========================================================

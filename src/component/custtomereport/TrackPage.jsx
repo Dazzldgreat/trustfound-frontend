@@ -18,7 +18,7 @@ const TrackStatusPage = ({ reportId = "LF-99283" }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black text-[#131616] dark:text-white font-['Manrope']">
+    <div className="min-h-screen bg-gray-50 dark:bg-black text-[#292524] dark:text-white font-['Manrope']">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-gray-100 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">

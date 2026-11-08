@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import { useNavigate, useParams } from "react-router-dom";
+import { API } from "../config";
 
 function StaffQRScanner() {
     const navigate = useNavigate();
@@ -114,7 +115,7 @@ function StaffQRScanner() {
                 }
 
                 const response = await fetch(
-                    `https://trustfound-backend.onrender.com/api/staff/verify-found-item/${encodeURIComponent(
+                    `${API}/staff/verify-found-item/${encodeURIComponent(
                         token
                     )}/`,
                     {

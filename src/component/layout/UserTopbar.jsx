@@ -5,11 +5,11 @@ import { Menu, Bell, ChevronDown } from "lucide-react";
 import { API as API_BASE_URL } from "../../config";
 
 const DEFAULT_SETTINGS = {
-    primary_color: "#2563eb",
-    secondary_color: "#0f172a",
-    background_color: "#f8fafc",
+    primary_color: "#EA580C",
+    secondary_color: "#292524",
+    background_color: "#FFF7ED",
     border_color: "#ffffff",
-    border_line_color: "#e2e8f0",
+    border_line_color: "#E9E1D8",
     border_style: "solid",
     border_width: 1,
 };

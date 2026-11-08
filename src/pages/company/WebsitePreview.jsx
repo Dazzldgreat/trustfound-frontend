@@ -19,8 +19,8 @@ const DEFAULT_SETTINGS = {
     about_text:
         "We help people reconnect with lost belongings.",
     template: "modern",
-    primary_color: "#4f46e5",
-    secondary_color: "#0f172a",
+    primary_color: "#EA580C",
+    secondary_color: "#292524",
     show_about: true,
     show_featured_items: true,
     show_contact: true,

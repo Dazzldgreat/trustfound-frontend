@@ -12,6 +12,7 @@ import {
     CheckCircle,
     ClipboardCheck,
 } from "lucide-react";
+import { API } from "../config";
 
 function StaffReceivedFoundItemDetail() {
 
@@ -30,7 +31,7 @@ function StaffReceivedFoundItemDetail() {
                 const access = localStorage.getItem("access");
 
                 const response = await fetch(
-                    `https://trustfound-backend.onrender.com/api/staff/report-found-item/${id}/`,
+                    `${API}/staff/report-found-item/${id}/`,
                     {
                         headers: {
                             Authorization: `Bearer ${access}`,

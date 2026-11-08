@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { API } from "../../config";
 
 export default function CompanyVerifyCodePage() {
   const navigate = useNavigate();
@@ -34,7 +35,7 @@ export default function CompanyVerifyCodePage() {
 
     try {
       const response = await fetch(
-        "https://trustfound-backend.onrender.com/api/company/verify-registration/",
+        `${API}/company/verify-registration/`,
         {
           method: "POST",
           headers: {
@@ -87,7 +88,7 @@ export default function CompanyVerifyCodePage() {
 
     try {
       const response = await fetch(
-        "https://trustfound-backend.onrender.com/api/company/resend-registration-code/",
+        `${API}/company/resend-registration-code/`,
         {
           method: "POST",
           headers: {

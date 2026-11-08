@@ -131,7 +131,7 @@ function SubmissionPage({ reportData }) {
                 Successfully Lodged
               </div>
 
-              <h1 className="text-4xl md:text-5xl font-extrabold text-[#131616] dark:text-white">
+              <h1 className="text-4xl md:text-5xl font-extrabold text-[#292524] dark:text-white">
                 Submission Confirmed
               </h1>
 

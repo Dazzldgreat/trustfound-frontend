@@ -32,7 +32,7 @@ import {
 // API
 // =============================================================
 
-import { API } from "../config";
+import { API, API_BASE_URL } from "../config";
 // =============================================================
 // CATEGORIES
 // =============================================================
@@ -101,7 +101,7 @@ function StaffReportFoundItem() {
 
     const storedCompanyLogo =
         storedCompany.logo ||
-        "https://trustfound-backend.onrender.com/media/companies/logos/javic.png";
+        `${API_BASE_URL}/media/companies/logos/javic.png`;
 
 
     // =========================================================

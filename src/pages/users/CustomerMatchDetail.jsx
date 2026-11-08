@@ -15,11 +15,11 @@ import { API } from "../../config";
 const API_ORIGIN = API.replace("/api", "");
 
 const DEFAULT_WEBSITE_SETTINGS = {
-    primary_color: "#2563eb",
-    secondary_color: "#164ed1",
-    background_color: "#f8fafc",
-    text_color: "#475569",
-    heading_color: "#0f172a",
+    primary_color: "#EA580C",
+    secondary_color: "#C2410C",
+    background_color: "#FFF7ED",
+    text_color: "#57534E",
+    heading_color: "#292524",
     card_color: "#ffffff",
     button_text_color: "#ffffff",
 
@@ -27,7 +27,7 @@ const DEFAULT_WEBSITE_SETTINGS = {
     border_color: "#ffffff",
 
     // Border Line Color = actual border stroke.
-    border_line_color: "#e2e8f0",
+    border_line_color: "#E9E1D8",
 
     border_style: "solid",
     border_width: 1,

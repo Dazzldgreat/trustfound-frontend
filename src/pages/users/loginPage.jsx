@@ -7,18 +7,21 @@ import {
   useParams,
 } from "react-router-dom";
 import {
-  AlertCircle,
-  ArrowLeft,
-  Loader2,
+  ArrowRight,
   LockKeyhole,
   Mail,
   MapPin,
-  Package,
   ShieldCheck,
 } from "lucide-react";
-
-const API = "https://trustfound-backend.onrender.com/api";
-const SERVER_ORIGIN = "https://trustfound-backend.onrender.com";
+import { API } from "../../config";
+import { BRAND, resolveMediaUrl } from "../../theme";
+import AuthLayout, {
+  AuthAlert,
+  AuthField,
+  AuthHeading,
+  AuthMessage,
+  AuthSubmit,
+} from "../../component/auth/AuthLayout";
 
 const DEFAULT_SETTINGS = {
   hero_title: "Welcome to our Lost & Found",
@@ -28,11 +31,11 @@ const DEFAULT_SETTINGS = {
   about_text:
     "We help people report lost belongings, register found items, and reconnect owners with their property.",
   template: "modern",
-  primary_color: "#2563eb",
-  secondary_color: "#0f172a",
-  background_color: "#f8fafc",
+  primary_color: BRAND.primary,
+  secondary_color: BRAND.graphite,
+  background_color: BRAND.background,
   border_color: "#ffffff",
-  border_line_color: "#e2e8f0",
+  border_line_color: "#E9E1D8",
   border_style: "solid",
   border_width: 1,
   logo: "",
@@ -128,22 +131,7 @@ function normalizeSettings(payload) {
   };
 }
 
-function getImageUrl(value) {
-  if (!value || typeof value !== "string") {
-    return "";
-  }
-
-  if (
-    /^(https?:)?\/\//i.test(value) ||
-    value.startsWith("data:")
-  ) {
-    return value;
-  }
-
-  return `${SERVER_ORIGIN}${
-    value.startsWith("/") ? "" : "/"
-  }${value}`;
-}
+const getImageUrl = resolveMediaUrl;
 
 async function readResponse(response) {
   const contentType =
@@ -539,394 +527,145 @@ export default function LoginPage() {
       company?.logo
   );
 
-  const cardBorder = {
-    borderColor: settings.border_line_color,
-    borderStyle: settings.border_style,
-    borderWidth: `${settings.border_width}px`,
-  };
-
-  const inputStyle = {
-    backgroundColor: "#ffffff",
-    color: settings.secondary_color,
-    borderColor: settings.border_line_color,
-    borderStyle: settings.border_style,
-    borderWidth: `${settings.border_width}px`,
-    "--tw-ring-color": `${settings.primary_color}30`,
-  };
-
-  const isMinimal = settings.template === "minimal";
-  const isProfessional = settings.template === "professional";
-
-  const pageStyle = {
-    backgroundColor: settings.background_color,
-    color: settings.secondary_color,
-    "--company-primary": settings.primary_color,
-    "--company-secondary": settings.secondary_color,
-    "--company-background": settings.background_color,
-    "--company-border-color": settings.border_color,
-    "--company-border-line-color": settings.border_line_color,
-    "--company-border-style": settings.border_style,
-    "--company-border-width": `${settings.border_width}px`,
+  const theme = {
+    primary: settings.primary_color,
+    background: settings.background_color,
   };
 
   // Loading screen.
   if (companyLoading) {
     return (
-      <div
-        className="flex min-h-screen items-center justify-center px-4"
-        style={pageStyle}
-      >
-        <div className="text-center">
-          <Loader2
-            size={40}
-            className="mx-auto animate-spin"
-            style={{ color: settings.primary_color }}
-          />
-
-          <p className="mt-4 text-sm opacity-70">
-            Loading company login...
-          </p>
-        </div>
-      </div>
+      <AuthMessage
+        loading
+        message="Loading company login..."
+        {...theme}
+      />
     );
   }
 
   // Company not found or profile unavailable.
   if (companyError || !company) {
     return (
-      <div
-        className="flex min-h-screen items-center justify-center px-4 py-10"
-        style={pageStyle}
-      >
-        <div
-          className="w-full max-w-md rounded-3xl p-8 text-center shadow-xl"
-          style={{
-            ...cardBorder,
-            backgroundColor: settings.border_color,
-          }}
-        >
-          <AlertCircle
-            className="mx-auto text-red-500"
-            size={36}
-          />
-
-          <h1
-            className="mt-5 text-2xl font-black"
-            style={{ color: settings.secondary_color }}
-          >
-            Company Not Found
-          </h1>
-
-          <p className="mt-3 text-sm leading-6 opacity-75">
-            {companyError ||
-              "This company platform is currently unavailable."}
-          </p>
-
-          <Link
-            to="/"
-            className="mt-6 inline-flex items-center gap-2 rounded-xl px-5 py-3 font-bold text-white"
-            style={{ backgroundColor: settings.primary_color }}
-          >
-            <ArrowLeft size={17} />
-            Back to TrustFound
-          </Link>
-        </div>
-      </div>
+      <AuthMessage
+        title="Company not found"
+        message={
+          companyError ||
+          "This company platform is currently unavailable."
+        }
+        actionTo="/"
+        actionLabel="Back to TrustFound"
+        {...theme}
+      />
     );
   }
 
   // Unpublished website screen.
   if (websiteUnpublished) {
     return (
-      <main
-        className="flex min-h-screen items-center justify-center px-4 py-10"
-        style={pageStyle}
-      >
-        <section
-          className="w-full max-w-md rounded-3xl p-8 text-center shadow-xl"
-          style={{
-            ...cardBorder,
-            backgroundColor: settings.border_color,
-          }}
-        >
-          <AlertCircle
-            size={40}
-            className="mx-auto"
-            style={{ color: settings.primary_color }}
-          />
-
-          <h1
-            className="mt-5 text-2xl font-black"
-            style={{ color: settings.secondary_color }}
-          >
-            Website Not Published
-          </h1>
-
-          <p className="mt-3 text-sm leading-6 opacity-75">
-            {companyName} has not published its public website
-            settings yet. Please contact the company
-            administrator.
-          </p>
-
-          <Link
-            to={publicCompanyPath}
-            className="mt-6 inline-flex items-center gap-2 rounded-xl px-5 py-3 font-bold text-white"
-            style={{ backgroundColor: settings.primary_color }}
-          >
-            <ArrowLeft size={17} />
-            Back to {companyName}
-          </Link>
-        </section>
-      </main>
+      <AuthMessage
+        title="Website not published"
+        message={`${companyName} has not published its public website yet. Please contact the company administrator.`}
+        actionTo={publicCompanyPath}
+        actionLabel={`Back to ${companyName}`}
+        {...theme}
+      />
     );
   }
 
   return (
-    <main
-      className="login-page-theme relative flex min-h-screen items-center justify-center px-4 py-10 sm:px-6"
-      style={pageStyle}
+    <AuthLayout
+      companyName={companyName}
+      logoUrl={logoUrl}
+      primary={settings.primary_color}
+      secondary={settings.secondary_color}
+      background={settings.background_color}
+      backTo={publicCompanyPath}
+      tagline={company?.description}
     >
-      <div
-        className={`w-full max-w-md ${
-          isProfessional ? "text-center" : ""
-        }`}
-      >
-        {/* Company header */}
-        <header className="mb-7 text-center">
-          <Link
-            to={publicCompanyPath}
-            className="inline-flex items-center gap-2 text-sm font-semibold opacity-70 transition hover:opacity-100"
+      <AuthHeading
+        title="Welcome back"
+        subtitle={`Log in to your ${companyName} account`}
+      />
+
+      {company?.location && (
+        <p className="-mt-3 mb-5 inline-flex items-center gap-1.5 text-xs text-stone-500">
+          <MapPin size={13} />
+          {company.location}
+        </p>
+      )}
+
+      <AuthAlert>{formError}</AuthAlert>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <AuthField
+          id="email"
+          label="Email address"
+          icon={Mail}
+          type="email"
+          value={formData.email}
+          onChange={handleChange}
+          placeholder="you@example.com"
+          required
+          disabled={loading}
+          autoComplete="email"
+          primary={settings.primary_color}
+        />
+
+        <AuthField
+          id="password"
+          label="Password"
+          icon={LockKeyhole}
+          type="password"
+          value={formData.password}
+          onChange={handleChange}
+          placeholder="Enter your password"
+          required
+          disabled={loading}
+          autoComplete="current-password"
+          primary={settings.primary_color}
+          action={
+            <Link
+              to={forgotPasswordPath}
+              className="text-sm font-semibold hover:underline"
+              style={{ color: settings.primary_color }}
+            >
+              Forgot password?
+            </Link>
+          }
+        />
+
+        <div className="pt-2">
+          <AuthSubmit
+            loading={loading}
+            loadingText="Logging in..."
+            primary={settings.primary_color}
           >
-            <ArrowLeft size={16} />
-            Back to {companyName}
-          </Link>
+            Log in
+            <ArrowRight size={18} />
+          </AuthSubmit>
+        </div>
+      </form>
 
-          {/* Company logo */}
-          <div className="mt-6 flex justify-center">
-            {logoUrl ? (
-              <img
-                src={logoUrl}
-                alt={`${companyName} logo`}
-                className="h-20 w-20 rounded-2xl object-cover shadow-lg"
-                style={{
-                  ...cardBorder,
-                  backgroundColor: settings.border_color,
-                }}
-                onError={(event) => {
-                  event.currentTarget.style.display = "none";
-                }}
-              />
-            ) : (
-              <div
-                className="flex h-20 w-20 items-center justify-center rounded-2xl text-2xl font-black text-white shadow-lg"
-                style={{
-                  backgroundColor: settings.primary_color,
-                  ...cardBorder,
-                }}
-              >
-                {companyName.substring(0, 2).toUpperCase() || (
-                  <Package size={28} />
-                )}
-              </div>
-            )}
-          </div>
-
-          <h1
-            className="mt-5 text-2xl font-black sm:text-3xl"
-            style={{ color: settings.secondary_color }}
-          >
-            {companyName}
-          </h1>
-
-          <p className="mt-2 text-sm opacity-70">
-            Lost &amp; Found Platform
-          </p>
-
-          {company?.description && (
-            <p className="mx-auto mt-3 max-w-sm text-sm leading-6 opacity-75">
-              {company.description}
-            </p>
-          )}
-
-          {company?.location && (
-            <p className="mt-2 inline-flex items-center gap-1 text-sm opacity-70">
-              <MapPin size={14} />
-              {company.location}
-            </p>
-          )}
-        </header>
-
-        {/* Login card */}
-        <section
-          className={`rounded-3xl p-6 shadow-2xl sm:p-8 ${
-            isMinimal ? "shadow-md" : ""
-          }`}
-          style={{
-            ...cardBorder,
-            backgroundColor: settings.border_color,
-          }}
+      <p className="mt-6 text-center text-sm text-stone-600">
+        Don&apos;t have an account?{" "}
+        <Link
+          to={signupPath}
+          className="font-bold hover:underline"
+          style={{ color: settings.primary_color }}
         >
-          <div className="mb-7 text-center">
-            <div
-              className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl"
-              style={{
-                backgroundColor: `${settings.primary_color}18`,
-                color: settings.primary_color,
-              }}
-            >
-              <LockKeyhole size={23} />
-            </div>
+          Sign up
+        </Link>
+      </p>
 
-            <h2
-              className="text-3xl font-black"
-              style={{ color: settings.secondary_color }}
-            >
-              Welcome Back
-            </h2>
-
-            <p className="mt-2 text-sm opacity-70">
-              Login to your {companyName} account
-            </p>
-          </div>
-
-          {/* Login error */}
-          {formError && (
-            <div
-              role="alert"
-              className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-            >
-              {formError}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Email */}
-            <div>
-              <label
-                htmlFor="email"
-                className="mb-2 block text-sm font-semibold"
-                style={{ color: settings.secondary_color }}
-              >
-                Email Address
-              </label>
-
-              <div className="relative">
-                <Mail
-                  size={18}
-                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                />
-
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="Enter your email address"
-                  required
-                  disabled={loading}
-                  autoComplete="email"
-                  className="w-full rounded-xl py-3.5 pl-11 pr-4 outline-none transition focus:ring-2"
-                  style={inputStyle}
-                />
-              </div>
-
-              <p className="mt-2 text-xs opacity-60">
-                Use the email address you registered with.
-              </p>
-            </div>
-
-            {/* Password */}
-            <div>
-              <div className="mb-2 flex items-center justify-between gap-3">
-                <label
-                  htmlFor="password"
-                  className="text-sm font-semibold"
-                  style={{ color: settings.secondary_color }}
-                >
-                  Password
-                </label>
-
-                <Link
-                  to={forgotPasswordPath}
-                  className="text-sm font-semibold hover:underline"
-                  style={{ color: settings.primary_color }}
-                >
-                  Forgot password?
-                </Link>
-              </div>
-
-              <input
-                id="password"
-                name="password"
-                type="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Enter your password"
-                required
-                disabled={loading}
-                autoComplete="current-password"
-                className="w-full rounded-xl px-4 py-3.5 outline-none transition focus:ring-2"
-                style={inputStyle}
-              />
-            </div>
-
-            {/* Login button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl px-5 py-4 font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-              style={{ backgroundColor: settings.primary_color }}
-            >
-              {loading ? (
-                <>
-                  <Loader2
-                    size={18}
-                    className="animate-spin"
-                  />
-                  Logging in...
-                </>
-              ) : (
-                <>
-                  <ShieldCheck size={18} />
-                  Login
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* Signup and Staff Login links */}
-          <div className="mt-7 space-y-4 text-center text-sm">
-            <p className="opacity-75">
-              Don&apos;t have an account?{" "}
-              <Link
-                to={signupPath}
-                className="font-bold hover:underline"
-                style={{ color: settings.primary_color }}
-              >
-                Sign Up
-              </Link>
-            </p>
-
-            <p>
-              <Link
-                to={staffLoginPath}
-                className="inline-flex items-center justify-center gap-2 font-bold hover:underline"
-                style={{ color: settings.primary_color }}
-              >
-                <ShieldCheck size={17} />
-                Staff Login
-              </Link>
-            </p>
-          </div>
-        </section>
-
-        {/* Footer */}
-        <footer className="mt-6 text-center text-xs opacity-60">
-          © {new Date().getFullYear()} {companyName}. All rights
-          reserved.
-        </footer>
+      <div className="mt-6 border-t border-stone-100 pt-5">
+        <Link
+          to={staffLoginPath}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-stone-200 px-4 py-3 text-sm font-semibold text-graphite transition hover:border-stone-300 hover:bg-stone-50"
+        >
+          <ShieldCheck size={17} style={{ color: settings.primary_color }} />
+          Staff login
+        </Link>
       </div>
-    </main>
+    </AuthLayout>
   );
 }

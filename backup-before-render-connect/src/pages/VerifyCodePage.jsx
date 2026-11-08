@@ -21,7 +21,14 @@ function VerifyCodePage() {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
-
+console.log("Verification data:", {
+  email,
+  purpose,
+  company,
+  hasEmail: Boolean(email),
+  hasPurpose: Boolean(purpose),
+  hasCompany: Boolean(company),
+});
   // VERIFY CODE
   const handleVerify = async (e) => {
     e.preventDefault();
@@ -95,7 +102,12 @@ function VerifyCodePage() {
 
         alert("Account verified successfully!");
 
-        navigate("/dashboard", { replace: true });
+        navigate(
+          `/company/${encodeURIComponent(
+             data.company?.slug || company
+          )}/dashboard`,
+          { replace: true }
+        );
       }
 
       // FORGOT PASSWORD FLOW

@@ -169,3 +169,27 @@ export async function companyApi(path, { method = "GET", body } = {}) {
 
     return data;
 }
+
+/** Store a company-admin session (same keys the login page uses). */
+export function saveCompanySession({ tokens, user, company }) {
+    const keys = [
+        "access_token", "access", "company_access",
+        "refresh_token", "refresh", "company_refresh",
+        "user", "company_user", "company", "companySlug", "company_slug",
+    ];
+    keys.forEach((key) => localStorage.removeItem(key));
+
+    localStorage.setItem("access_token", tokens.access);
+    localStorage.setItem("access", tokens.access);
+    localStorage.setItem("company_access", tokens.access);
+    localStorage.setItem("refresh_token", tokens.refresh);
+    localStorage.setItem("refresh", tokens.refresh);
+    localStorage.setItem("company_refresh", tokens.refresh);
+    localStorage.setItem("user", JSON.stringify(user || {}));
+    localStorage.setItem("company_user", JSON.stringify(user || {}));
+    localStorage.setItem("company", JSON.stringify(company || {}));
+    if (company?.slug) {
+        localStorage.setItem("companySlug", company.slug);
+        localStorage.setItem("company_slug", company.slug);
+    }
+}

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
     AlertCircle,
     ArrowLeft,
@@ -292,12 +292,13 @@ export default function Checkout() {
     return (
         <div className="min-h-screen bg-cream px-4 py-8 sm:py-12">
             <div className="mx-auto max-w-5xl">
-                <Link
-                    to={returnTo}
+                <button
+                    type="button"
+                    onClick={() => (window.history.length > 1 ? navigate(-1) : navigate(returnTo))}
                     className="mb-6 inline-flex items-center gap-2 text-sm font-bold text-stone-600 hover:text-primary"
                 >
                     <ArrowLeft size={16} /> Back
-                </Link>
+                </button>
 
                 <h1 className="text-3xl font-black text-graphite sm:text-4xl">
                     {isDomain ? "Buy your domain" : "Choose your subscription"}

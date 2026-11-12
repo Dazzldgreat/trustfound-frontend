@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { API } from "../../config";
+import { saveCompanySession } from "../../utils/site";
 
 export default function CompanyVerifyCodePage() {
   const navigate = useNavigate();
@@ -62,8 +63,16 @@ export default function CompanyVerifyCodePage() {
         "Company registration verified successfully."
       );
 
+      // Log the new company in so setup saves to THIS company.
+      if (data.tokens?.access) {
+        saveCompanySession(data);
+      }
+
       setTimeout(() => {
-          navigate("/company/setup");
+          navigate(
+            data.tokens?.access ? "/company/setup" : "/company/login",
+            { replace: true }
+          );
       }, 1200);
     } catch (err) {
       setError(

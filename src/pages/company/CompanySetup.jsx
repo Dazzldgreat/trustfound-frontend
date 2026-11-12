@@ -7,6 +7,31 @@ import { resolveMediaUrl } from "../../theme";
 
 const API_URL = API;
 
+function currentToken() {
+  return (
+    localStorage.getItem("access_token") ||
+    localStorage.getItem("company_access") ||
+    localStorage.getItem("access") ||
+    ""
+  );
+}
+
+// True when a saved login looks usable (present and not expired).
+function isUsableToken(token) {
+  try {
+    const part = token.split(".")[1];
+    if (!part) return false;
+    const base64 = part.replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(
+      atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, "="))
+    );
+    if (payload.token_type && payload.token_type !== "access") return false;
+    return !payload.exp || Date.now() < payload.exp * 1000;
+  } catch {
+    return false;
+  }
+}
+
 export default function CompanySetup() {
   const navigate = useNavigate();
 
@@ -26,23 +51,27 @@ export default function CompanySetup() {
 
   // Step 1: organization details. Step 2: website address.
   const [step, setStep] = useState("details");
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   // Prefill with what is already saved (name from registration, or a
   // previous setup), so returning to this page never wipes details.
   useEffect(() => {
-    const token =
-      localStorage.getItem("access_token") ||
-      localStorage.getItem("company_access") ||
-      localStorage.getItem("access");
+    const token = currentToken();
 
-    if (!token) return undefined;
+    if (!isUsableToken(token)) {
+      setSessionExpired(true);
+      return undefined;
+    }
 
     let cancelled = false;
 
     fetch(`${API_URL}/company/profile/setup/`, {
       headers: { Authorization: `Bearer ${token}` },
     })
-      .then((response) => (response.ok ? response.json() : null))
+      .then((response) => {
+        if (response.status === 401 && !cancelled) setSessionExpired(true);
+        return response.ok ? response.json() : null;
+      })
       .then((data) => {
         if (cancelled || !data?.company) return;
 
@@ -139,48 +168,10 @@ export default function CompanySetup() {
       return;
     }
 
-    // Prefer the standard access token key used by company login.
-    const token =
-      localStorage.getItem("access_token") ||
-      localStorage.getItem("company_access") ||
-      localStorage.getItem("access");
+    const token = currentToken();
 
-    if (!token) {
-      setError("Your session was not found. Please log in again.");
-      return;
-    }
-
-    // Detect an obviously wrong token type before sending the request.
-    // This does not verify the token signature.
-    try {
-      const parts = token.split(".");
-
-      if (parts.length !== 3) {
-        setError("Your saved access token is invalid. Please log in again.");
-        return;
-      }
-
-      const base64 = parts[1]
-        .replace(/-/g, "+")
-        .replace(/_/g, "/");
-
-      const payload = JSON.parse(
-        atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, "="))
-      );
-
-      if (payload.token_type && payload.token_type !== "access") {
-        setError(
-          "The saved token is not an access token. Please log in again."
-        );
-        return;
-      }
-
-      if (payload.exp && Date.now() >= payload.exp * 1000) {
-        setError("Your access token has expired. Please log in again.");
-        return;
-      }
-    } catch {
-      setError("Your saved token cannot be read. Please log in again.");
+    if (!isUsableToken(token)) {
+      setSessionExpired(true);
       return;
     }
 
@@ -213,18 +204,7 @@ export default function CompanySetup() {
       const data = await response.json().catch(() => ({}));
 
       if (response.status === 401) {
-        console.error("Company setup authentication rejected:", {
-          status: response.status,
-          code: data.code,
-          detail: data.detail,
-        });
-
-        setError(
-          data.code === "token_not_valid"
-            ? "Django rejected your access token. Please log in again. If the error continues, check your Django JWT settings."
-            : "Your session is not authorized. Please log in again."
-        );
-
+        setSessionExpired(true);
         return;
       }
 
@@ -271,12 +251,35 @@ export default function CompanySetup() {
       console.error("Company setup request failed:", err);
 
       setError(
-        "Unable to connect to Django. Check that your backend is running."
+        "We couldn't reach the server. Check your internet connection and try again."
       );
     } finally {
       setLoading(false);
     }
   };
+
+  if (sessionExpired) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-cream px-6 py-12">
+        <div className="w-full max-w-md rounded-3xl bg-white p-8 text-center shadow-2xl">
+          <h2 className="text-2xl font-black text-graphite">
+            Please log in to continue
+          </h2>
+          <p className="mt-3 text-stone-500">
+            For your security we need you to sign in again before
+            finishing your organization setup.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate("/company/login", { replace: true })}
+            className="mt-6 w-full rounded-xl bg-primary py-3.5 font-bold text-white hover:bg-primary-dark"
+          >
+            Log in
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (step === "address") {
     return (

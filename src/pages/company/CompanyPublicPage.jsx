@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { currentCustomDomain } from "../../utils/site";
 
 import {
     AlertCircle,
@@ -177,8 +178,10 @@ function getSettingsFromResponse(data) {
     );
 }
 
-export default function CompanyPublicPage() {
-    const { slug: routeSlug } = useParams();
+export default function CompanyPublicPage({ slug: slugProp } = {}) {
+    const params = useParams();
+    // On a custom domain the slug comes from DomainGate, not the URL.
+    const routeSlug = slugProp || params.slug;
 
     const [company, setCompany] = useState(null);
     const [settings, setSettings] = useState(DEFAULT_SETTINGS);
@@ -235,6 +238,21 @@ export default function CompanyPublicPage() {
                 }
 
                 if (cancelled) return;
+
+                // A company with its own (real) domain: always send
+                // visitors there, so the site and every login live on
+                // the company's domain.
+                const site = companyData.site;
+                if (
+                    site?.uses_custom_domain &&
+                    site.domain_url &&
+                    !site.domain_is_sandbox &&
+                    !currentCustomDomain() &&
+                    !["localhost", "127.0.0.1"].includes(window.location.hostname)
+                ) {
+                    window.location.replace(site.domain_url);
+                    return;
+                }
 
                 setCompany(loadedCompany);
 

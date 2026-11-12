@@ -1,6 +1,9 @@
 import { createElement, useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { API } from "../../config";
+import BillingPanel from "../../component/company/BillingPanel";
+import DomainManager from "../../component/company/DomainManager";
+import { displaySiteAddress, publicSiteUrl } from "../../utils/site";
 import { PLACEHOLDER_IMAGE, resolveMediaUrl } from "../../theme";
 import PasswordInput from "../../component/PasswordInput";
 
@@ -15,6 +18,7 @@ import {
   Check,
   CheckCircle2,
   ChevronRight,
+  CreditCard,
   Clock,
   Eye,
   FileText,
@@ -96,7 +100,27 @@ export default function CompanyDashboard() {
     [activeCompanySlug]
   );
 
-  const [activeTab, setActiveTab] = useState("overview");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTabState] = useState(
+    () => searchParams.get("tab") || "overview"
+  );
+
+  // Keep the open tab in the URL so checkout can return to it.
+  const setActiveTab = useCallback(
+    (tab) => {
+      setActiveTabState(tab);
+      setSearchParams(
+        (params) => {
+          const next = new URLSearchParams(params);
+          if (tab === "overview") next.delete("tab");
+          else next.set("tab", tab);
+          return next;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [data, setData] = useState(null);
@@ -651,8 +675,15 @@ export default function CompanyDashboard() {
       return;
     }
 
-    // Use your existing public company page.
-    navigate(`/company/${encodeURIComponent(activeCompanySlug)}`);
+    // Custom domain when the company has one, otherwise the slug page.
+    const url = publicSiteUrl(data?.site, activeCompanySlug);
+
+    if (url && !url.startsWith(window.location.origin)) {
+      window.open(url, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    navigate(url ? url.replace(window.location.origin, "") : `/company/${encodeURIComponent(activeCompanySlug)}`);
   };
 
   const logout = () => {
@@ -845,7 +876,20 @@ export default function CompanyDashboard() {
       label: "Recent Reports",
       icon: FileText,
     },
+    {
+      id: "billing",
+      label: "Billing & Plan",
+      icon: CreditCard,
+    },
+    {
+      id: "domain",
+      label: "Domain & Hosting",
+      icon: Globe,
+    },
   ];
+
+  const subscription = data?.subscription;
+  const site = data?.site;
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900">
@@ -950,8 +994,25 @@ export default function CompanyDashboard() {
               Company Workspace
             </div>
             <p className="mt-2 break-all text-xs text-white/60">
-              {activeCompanySlug || "Company slug not available"}
+              {displaySiteAddress(site, activeCompanySlug) || "Company slug not available"}
             </p>
+            {subscription && (
+              <button
+                type="button"
+                onClick={() => setActiveTab("billing")}
+                className={`mt-3 inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${
+                  subscription.is_active
+                    ? subscription.status === "trialing"
+                      ? "bg-blue-500/20 text-blue-200"
+                      : "bg-green-500/20 text-green-200"
+                    : "bg-red-500/20 text-red-200"
+                }`}
+              >
+                {subscription.is_active
+                  ? `${subscription.plan?.name || "Free trial"} · ${subscription.days_left}d left`
+                  : "Subscription expired"}
+              </button>
+            )}
           </div>
 
           <p className="mb-3 px-3 text-xs font-black uppercase tracking-wider text-white/50">
@@ -1082,6 +1143,63 @@ export default function CompanyDashboard() {
                 <X size={18} />
               </button>
             </div>
+          )}
+
+          {/* SUBSCRIPTION BANNER */}
+
+          {subscription &&
+            activeTab !== "billing" &&
+            (!subscription.is_active ||
+              (subscription.status === "trialing" && subscription.days_left <= 7)) && (
+              <div
+                className={`mb-6 flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center ${
+                  subscription.is_active
+                    ? "border-blue-200 bg-blue-50 text-blue-900"
+                    : "border-red-200 bg-red-50 text-red-800"
+                }`}
+              >
+                <CreditCard className="shrink-0" size={20} />
+                <p className="flex-1 font-semibold">
+                  {subscription.is_active
+                    ? `Your free trial ends in ${subscription.days_left} day${subscription.days_left === 1 ? "" : "s"}. Choose a plan to keep everything running.`
+                    : "Your subscription has ended. Renew to keep your lost & found workspace running."}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("billing")}
+                  className="rounded-xl bg-graphite px-4 py-2 text-sm font-bold text-white"
+                >
+                  View plans
+                </button>
+              </div>
+            )}
+
+          {/* ====================================================
+              BILLING & DOMAIN
+          ==================================================== */}
+
+          {activeTab === "billing" && (
+            <>
+              <div className="mb-8">
+                <p className="mb-2 text-sm font-bold text-blue-600">BILLING</p>
+                <h2 className="text-3xl font-black tracking-tight sm:text-4xl">Billing &amp; Plan</h2>
+                <p className="mt-2 text-slate-500">Your subscription, plans and payment history.</p>
+              </div>
+              <BillingPanel />
+            </>
+          )}
+
+          {activeTab === "domain" && (
+            <>
+              <div className="mb-8">
+                <p className="mb-2 text-sm font-bold text-blue-600">WEBSITE ADDRESS</p>
+                <h2 className="text-3xl font-black tracking-tight sm:text-4xl">Domain &amp; Hosting</h2>
+                <p className="mt-2 text-slate-500">
+                  Use your free slug address or buy your own www.…laf domain without leaving this page.
+                </p>
+              </div>
+              <DomainManager mode="manage" returnTo="/company-dashboard?tab=domain" />
+            </>
           )}
 
           {/* ====================================================

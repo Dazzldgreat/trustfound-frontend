@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 
 import { API } from "../../config";
+import DomainManager from "../../component/company/DomainManager";
 import { DEFAULT_WEBSITE_SETTINGS, resolveMediaUrl, upgradeLegacyColor } from "../../theme";
 
 // ============================================================
@@ -1975,6 +1976,26 @@ function WebsiteSettings() {
           </button>
         </aside>
       </main>
+
+      {/* DOMAIN & HOSTING */}
+      <section
+        id="domain"
+        className="mx-auto max-w-7xl scroll-mt-24 px-4 pb-12 sm:px-6 lg:px-8"
+      >
+        <div className="mb-5 flex items-center gap-3">
+          <Globe className="text-primary" size={22} />
+          <div>
+            <h2 className="text-xl font-black text-graphite">Domain &amp; Hosting</h2>
+            <p className="text-sm text-stone-500">
+              Keep your free slug address or buy your own www.…laf domain right here.
+            </p>
+          </div>
+        </div>
+        <DomainManager
+          mode="manage"
+          returnTo={`/company/${encodeURIComponent(companySlug || "")}/website-settings#domain`}
+        />
+      </section>
     </div>
   );
 }

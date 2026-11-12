@@ -19,6 +19,9 @@ import CompanySetup from "./pages/company/CompanySetup";
 import CompanyPublicPage from "./pages/company/CompanyPublicPage";
 import WebsitePreview from "./pages/company/WebsitePreview";
 import WebsiteSettings from "./pages/company/WebsiteSettings";
+import Checkout from "./pages/company/Checkout";
+import DomainGate from "./component/DomainGate";
+import { useCustomDomain } from "./contexts/DomainContext";
 /* ============================================================
    CUSTOMER PAGES
 ============================================================ */
@@ -89,8 +92,17 @@ import ProtectedStaffRoute from "./pages/ProtectedStaffRoute";
 import ImageViewer from "./component/ImageViewer";
 
 
+/* On a company's own domain the home page is that company's website,
+   not the platform's marketing page. */
+function HomeRoute() {
+    const { slug } = useCustomDomain();
+
+    return slug ? <CompanyPublicPage slug={slug} /> : <LandingPage />;
+}
+
 function App() {
     return (
+        <DomainGate>
         <BrowserRouter>
 
             <ImageViewer />
@@ -103,7 +115,7 @@ function App() {
 
                 <Route
                     path="/"
-                    element={<LandingPage />}
+                    element={<HomeRoute />}
                 />
 
 
@@ -155,6 +167,17 @@ function App() {
                 <Route
                     path="/company-dashboard"
                     element={<CompanyDashboard />}
+                />
+                {/* ====================================================
+                    PAYMENTS (subscriptions + domains)
+                ==================================================== */}
+                <Route
+                    path="/company/checkout"
+                    element={<Checkout />}
+                />
+                <Route
+                    path="/company/checkout/callback"
+                    element={<Checkout />}
                 />
 
                 <Route
@@ -509,6 +532,7 @@ function App() {
             </Routes>
 
         </BrowserRouter>
+        </DomainGate>
     );
 }
 

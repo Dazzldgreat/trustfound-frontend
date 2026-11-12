@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { API } from "../../config";
+import DomainManager from "../../component/company/DomainManager";
+import { resolveMediaUrl } from "../../theme";
 
 const API_URL = API;
 
@@ -21,6 +23,52 @@ export default function CompanySetup() {
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Step 1: organization details. Step 2: website address.
+  const [step, setStep] = useState("details");
+
+  // Prefill with what is already saved (name from registration, or a
+  // previous setup), so returning to this page never wipes details.
+  useEffect(() => {
+    const token =
+      localStorage.getItem("access_token") ||
+      localStorage.getItem("company_access") ||
+      localStorage.getItem("access");
+
+    if (!token) return undefined;
+
+    let cancelled = false;
+
+    fetch(`${API_URL}/company/profile/setup/`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (cancelled || !data?.company) return;
+
+        const saved = data.company;
+
+        setForm((previous) => ({
+          name: previous.name || saved.name || "",
+          location: previous.location || saved.location || "",
+          phone: previous.phone || saved.phone || "",
+          email: previous.email || saved.email || "",
+          website: previous.website || saved.website || "",
+          description: previous.description || saved.description || "",
+        }));
+
+        if (saved.logo) {
+          setPreview((previous) => previous || resolveMediaUrl(saved.logo));
+        }
+      })
+      .catch(() => {
+        /* the form still works empty */
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -217,7 +265,8 @@ export default function CompanySetup() {
         }
       }
 
-      navigate("/company-dashboard", { replace: true });
+      setStep("address");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
       console.error("Company setup request failed:", err);
 
@@ -228,6 +277,34 @@ export default function CompanySetup() {
       setLoading(false);
     }
   };
+
+  if (step === "address") {
+    return (
+      <div className="min-h-screen bg-cream px-4 py-12 sm:px-6">
+        <div className="mx-auto w-full max-w-5xl">
+          <div className="mb-10 text-center">
+            <p className="text-sm font-bold uppercase tracking-wider text-primary">
+              Step 2 of 2
+            </p>
+            <h2 className="mt-2 text-3xl font-black text-graphite md:text-4xl">
+              Choose Your Website Address
+            </h2>
+            <p className="mx-auto mt-3 max-w-xl text-stone-500">
+              Start free with your slug address, or get your own
+              www.…laf domain now. You can skip this and buy a domain
+              later in Website Settings.
+            </p>
+          </div>
+
+          <DomainManager
+            mode="setup"
+            returnTo="/company-dashboard?tab=domain"
+            onDone={() => navigate("/company-dashboard", { replace: true })}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-cream flex items-center justify-center px-6 py-12">
@@ -249,7 +326,11 @@ export default function CompanySetup() {
             </div>
           </div>
 
-          <h2 className="text-3xl md:text-4xl font-black text-graphite mt-8">
+          <p className="mt-8 text-sm font-bold uppercase tracking-wider text-primary">
+            Step 1 of 2
+          </p>
+
+          <h2 className="text-3xl md:text-4xl font-black text-graphite mt-2">
             Set Up Your Organization
           </h2>
 
@@ -439,7 +520,7 @@ export default function CompanySetup() {
             >
               {loading
                 ? "Saving Organization..."
-                : "Complete Organization Setup"}
+                : "Save & Continue"}
             </button>
           </form>
         </div>

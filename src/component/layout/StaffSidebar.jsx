@@ -1,3 +1,5 @@
+import React, { useEffect, useState } from "react";
+
 import { NavLink, useNavigate } from "react-router-dom";
 
 import {
@@ -16,6 +18,9 @@ import {
     ChevronRight,
 } from "lucide-react";
 
+import { API } from "../../config";
+import { resolveMediaUrl } from "../../theme";
+
 function StaffSidebar({
     sidebarOpen,
     closeSidebar,
@@ -24,23 +29,158 @@ function StaffSidebar({
     const navigate = useNavigate();
 
     // ============================================================
-    // COMPANY
+    // SAFE LOCAL STORAGE
     // ============================================================
 
-    const storedCompany = (() => {
+    const getStoredObject = (key) => {
         try {
             return JSON.parse(
-                localStorage.getItem("company") || "{}"
+                localStorage.getItem(key) || "{}"
             );
         } catch {
             return {};
         }
-    })();
+    };
+
+    const [company, setCompany] = useState(() =>
+        getStoredObject("company")
+    );
+
+    const [logoFailed, setLogoFailed] = useState(false);
 
     const activeCompanySlug =
         companySlug ||
-        storedCompany.slug ||
+        company.slug ||
+        getStoredObject("company").slug ||
         "";
+
+    // ============================================================
+    // LOAD COMPANY PROFILE + WEBSITE LOGO
+    // ============================================================
+
+    useEffect(() => {
+        if (!activeCompanySlug) return;
+
+        let cancelled = false;
+
+        const loadCompany = async () => {
+            try {
+                const [profileResult, websiteResult] =
+                    await Promise.allSettled([
+                        fetch(
+                            `${API}/company/public/${encodeURIComponent(
+                                activeCompanySlug
+                            )}/`
+                        ),
+                        fetch(
+                            `${API}/company/public/${encodeURIComponent(
+                                activeCompanySlug
+                            )}/website/`
+                        ),
+                    ]);
+
+                let profileData = {};
+                let websiteData = {};
+
+                if (profileResult.status === "fulfilled") {
+                    const response = profileResult.value;
+
+                    if (response.ok) {
+                        profileData =
+                            await response.json();
+                    }
+                }
+
+                if (websiteResult.status === "fulfilled") {
+                    const response = websiteResult.value;
+
+                    if (response.ok) {
+                        websiteData =
+                            await response.json();
+                    }
+                }
+
+                const companyData =
+                    profileData.company ||
+                    profileData.data?.company ||
+                    profileData;
+
+                const websiteSettings =
+                    websiteData.settings ||
+                    websiteData.website_settings ||
+                    websiteData.website ||
+                    websiteData.data?.settings ||
+                    websiteData.data?.website_settings ||
+                    websiteData.data ||
+                    websiteData;
+
+                const latestStoredCompany =
+                    getStoredObject("company");
+
+                const logo =
+                    websiteSettings.logo_url ||
+                    websiteSettings.logo ||
+                    companyData.logo_url ||
+                    companyData.logo ||
+                    latestStoredCompany.logo_url ||
+                    latestStoredCompany.logo ||
+                    null;
+
+                const updatedCompany = {
+                    ...latestStoredCompany,
+                    ...companyData,
+                    name:
+                        companyData.name ||
+                        latestStoredCompany.name ||
+                        "Company",
+                    slug:
+                        companyData.slug ||
+                        activeCompanySlug,
+                    logo,
+                    logo_url: logo,
+                };
+
+                if (!cancelled) {
+                    setCompany(updatedCompany);
+                    setLogoFailed(false);
+
+                    localStorage.setItem(
+                        "company",
+                        JSON.stringify(updatedCompany)
+                    );
+                }
+            } catch (error) {
+                console.error(
+                    "Staff sidebar company load error:",
+                    error
+                );
+            }
+        };
+
+        loadCompany();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [activeCompanySlug]);
+
+    // ============================================================
+    // COMPANY LOGO + INITIAL
+    // ============================================================
+
+    const companyLogoUrl = resolveMediaUrl(
+        company.logo_url ||
+        company.logo ||
+        ""
+    );
+
+    const companyInitial = (
+        company.name ||
+        activeCompanySlug ||
+        "C"
+    )
+        .charAt(0)
+        .toUpperCase();
 
     // ============================================================
     // COMPANY ROUTE
@@ -85,9 +225,7 @@ function StaffSidebar({
         {
             name: "Dashboard",
             description: "Overview & activity",
-            path: companyRoute(
-                "/staff-dashboard"
-            ),
+            path: companyRoute("/staff-dashboard"),
             icon: LayoutDashboard,
         },
     ];
@@ -96,36 +234,25 @@ function StaffSidebar({
         {
             name: "Report Found Item",
             description: "Register a found item",
-            path: companyRoute(
-                "/staff/report-found-item"
-            ),
+            path: companyRoute("/staff/report-found-item"),
             icon: PlusCircle,
         },
-
         {
             name: "Found by Staff",
             description: "Staff-submitted items",
-            path: companyRoute(
-                "/staff/found-by-staff"
-            ),
+            path: companyRoute("/staff/found-by-staff"),
             icon: PackageSearch,
         },
-
         {
             name: "Verified Items",
             description: "Approved found items",
-            path: companyRoute(
-                "/staff/verified-items"
-            ),
+            path: companyRoute("/staff/verified-items"),
             icon: BadgeCheck,
         },
-
         {
             name: "Pending Verification",
             description: "Items awaiting review",
-            path: companyRoute(
-                "/staff/pending"
-            ),
+            path: companyRoute("/staff/pending"),
             icon: Clock3,
         },
     ];
@@ -134,27 +261,19 @@ function StaffSidebar({
         {
             name: "AI Matches",
             description: "Potential item matches",
-            path: companyRoute(
-                "/staff/matches"
-            ),
+            path: companyRoute("/staff/matches"),
             icon: Sparkles,
         },
-
         {
             name: "Claim Requests",
             description: "Review ownership claims",
-            path: companyRoute(
-                "/staff/claim-requests"
-            ),
+            path: companyRoute("/staff/claim-requests"),
             icon: ClipboardCheck,
         },
-
         {
             name: "Notifications",
             description: "Staff alerts",
-            path: companyRoute(
-                "/staff-notifications"
-            ),
+            path: companyRoute("/staff-notifications"),
             icon: Bell,
         },
     ];
@@ -163,9 +282,7 @@ function StaffSidebar({
     // NAVIGATION ITEM
     // ============================================================
 
-    const NavigationItem = ({
-        menu,
-    }) => {
+    const NavigationItem = ({ menu }) => {
         const Icon = menu.icon;
 
         return (
@@ -196,7 +313,6 @@ function StaffSidebar({
             >
                 {({ isActive }) => (
                     <>
-                        {/* Active indicator */}
                         {isActive && (
                             <span
                                 className="
@@ -211,7 +327,6 @@ function StaffSidebar({
                             />
                         )}
 
-                        {/* Icon */}
                         <div
                             className={`
                                 flex-shrink-0
@@ -231,15 +346,10 @@ function StaffSidebar({
                         >
                             <Icon
                                 size={18}
-                                strokeWidth={
-                                    isActive
-                                        ? 2.4
-                                        : 2
-                                }
+                                strokeWidth={isActive ? 2.4 : 2}
                             />
                         </div>
 
-                        {/* Text */}
                         <div className="min-w-0 flex-1">
                             <p
                                 className={`
@@ -271,7 +381,6 @@ function StaffSidebar({
                             </p>
                         </div>
 
-                        {/* Arrow */}
                         <ChevronRight
                             size={15}
                             className={`
@@ -296,9 +405,7 @@ function StaffSidebar({
 
     return (
         <>
-            {/* ====================================================
-                MOBILE OVERLAY
-            ==================================================== */}
+            {/* MOBILE OVERLAY */}
 
             {sidebarOpen && (
                 <div
@@ -315,9 +422,7 @@ function StaffSidebar({
                 />
             )}
 
-            {/* ====================================================
-                SIDEBAR
-            ==================================================== */}
+            {/* SIDEBAR */}
 
             <aside
                 className={`
@@ -326,29 +431,21 @@ function StaffSidebar({
                     top-0
                     left-0
                     z-50
-
                     h-screen
                     w-[290px]
-
                     bg-gradient-to-b
                     from-slate-950
                     via-blue-950
                     to-slate-950
-
                     text-white
-
                     flex
                     flex-col
-
                     border-r
                     border-white/10
-
                     shadow-2xl
-
                     transition-transform
                     duration-300
                     ease-in-out
-
                     ${
                         sidebarOpen
                             ? "translate-x-0"
@@ -356,27 +453,33 @@ function StaffSidebar({
                     }
                 `}
             >
-                {/* =================================================
-                    BRAND HEADER
-                ================================================= */}
+                {/* BRAND HEADER */}
 
-                <div className="px-5 pt-5 pb-4 border-b border-white/10">
+                <div className="
+                    px-5
+                    pt-5
+                    pb-4
+                    border-b
+                    border-white/10
+                ">
+                    <div className="
+                        flex
+                        items-center
+                        justify-between
+                    ">
+                        <div className="
+                            flex
+                            items-center
+                            gap-3
+                            min-w-0
+                        ">
+                            {/* COMPANY LOGO */}
 
-                    <div className="flex items-center justify-between">
-
-                        <div className="flex items-center gap-3 min-w-0">
-
-                            {/* Company Logo */}
-
-                            {storedCompany.logo ? (
+                            {companyLogoUrl && !logoFailed ? (
                                 <img
-                                    src={
-                                        storedCompany.logo
-                                    }
-                                    alt={
-                                        storedCompany.name ||
-                                        "Company"
-                                    }
+                                    src={companyLogoUrl}
+                                    alt={`${company.name || "Company"} logo`}
+                                    onError={() => setLogoFailed(true)}
                                     className="
                                         w-11
                                         h-11
@@ -401,24 +504,22 @@ function StaffSidebar({
                                         items-center
                                         justify-center
                                         flex-shrink-0
+                                        font-bold
+                                        text-lg
                                     "
                                 >
-                                    <Building2
-                                        size={22}
-                                    />
+                                    {companyInitial}
                                 </div>
                             )}
 
                             <div className="min-w-0">
-
                                 <h1 className="
                                     text-base
                                     font-bold
                                     tracking-tight
                                     truncate
                                 ">
-                                    {storedCompany.name ||
-                                        "Lost & Found"}
+                                    {company.name || "Lost & Found"}
                                 </h1>
 
                                 <div className="
@@ -440,12 +541,10 @@ function StaffSidebar({
                                         Staff Portal
                                     </p>
                                 </div>
-
                             </div>
-
                         </div>
 
-                        {/* Mobile close */}
+                        {/* MOBILE CLOSE */}
 
                         <button
                             type="button"
@@ -467,10 +566,9 @@ function StaffSidebar({
                         >
                             <X size={21} />
                         </button>
-
                     </div>
 
-                    {/* Company slug */}
+                    {/* COMPANY SLUG */}
 
                     {activeCompanySlug && (
                         <div className="
@@ -482,7 +580,6 @@ function StaffSidebar({
                             border
                             border-white/5
                         ">
-
                             <p className="
                                 text-[9px]
                                 uppercase
@@ -501,15 +598,11 @@ function StaffSidebar({
                             ">
                                 {activeCompanySlug}
                             </p>
-
                         </div>
                     )}
-
                 </div>
 
-                {/* =================================================
-                    NAVIGATION
-                ================================================= */}
+                {/* NAVIGATION */}
 
                 <nav
                     className="
@@ -518,15 +611,12 @@ function StaffSidebar({
                         px-4
                         py-5
                         space-y-6
-
                         scrollbar-thin
                     "
                 >
-
-                    {/* Main */}
+                    {/* MAIN */}
 
                     <section>
-
                         <p className="
                             px-3
                             mb-2
@@ -540,28 +630,18 @@ function StaffSidebar({
                         </p>
 
                         <div className="space-y-1">
-
-                            {mainMenus.map(
-                                (menu) => (
-                                    <NavigationItem
-                                        key={
-                                            menu.path
-                                        }
-                                        menu={
-                                            menu
-                                        }
-                                    />
-                                )
-                            )}
-
+                            {mainMenus.map((menu) => (
+                                <NavigationItem
+                                    key={menu.path}
+                                    menu={menu}
+                                />
+                            ))}
                         </div>
-
                     </section>
 
-                    {/* Reports */}
+                    {/* REPORTS */}
 
                     <section>
-
                         <p className="
                             px-3
                             mb-2
@@ -575,28 +655,18 @@ function StaffSidebar({
                         </p>
 
                         <div className="space-y-1">
-
-                            {reportMenus.map(
-                                (menu) => (
-                                    <NavigationItem
-                                        key={
-                                            menu.path
-                                        }
-                                        menu={
-                                            menu
-                                        }
-                                    />
-                                )
-                            )}
-
+                            {reportMenus.map((menu) => (
+                                <NavigationItem
+                                    key={menu.path}
+                                    menu={menu}
+                                />
+                            ))}
                         </div>
-
                     </section>
 
-                    {/* Management */}
+                    {/* MANAGEMENT */}
 
                     <section>
-
                         <p className="
                             px-3
                             mb-2
@@ -610,32 +680,19 @@ function StaffSidebar({
                         </p>
 
                         <div className="space-y-1">
-
-                            {managementMenus.map(
-                                (menu) => (
-                                    <NavigationItem
-                                        key={
-                                            menu.path
-                                        }
-                                        menu={
-                                            menu
-                                        }
-                                    />
-                                )
-                            )}
-
+                            {managementMenus.map((menu) => (
+                                <NavigationItem
+                                    key={menu.path}
+                                    menu={menu}
+                                />
+                            ))}
                         </div>
-
                     </section>
-
                 </nav>
 
-                {/* =================================================
-                    COMPANY CARD
-                ================================================= */}
+                {/* COMPANY CARD */}
 
                 <div className="px-4 pb-4">
-
                     <div className="
                         rounded-xl
                         bg-white/5
@@ -643,13 +700,11 @@ function StaffSidebar({
                         border-white/10
                         p-3
                     ">
-
                         <div className="
                             flex
                             items-center
                             gap-3
                         ">
-
                             <div className="
                                 w-9
                                 h-9
@@ -661,13 +716,10 @@ function StaffSidebar({
                                 justify-center
                                 flex-shrink-0
                             ">
-                                <Building2
-                                    size={18}
-                                />
+                                <Building2 size={18} />
                             </div>
 
                             <div className="min-w-0">
-
                                 <p className="
                                     text-[9px]
                                     uppercase
@@ -685,21 +737,14 @@ function StaffSidebar({
                                     truncate
                                     mt-0.5
                                 ">
-                                    {storedCompany.name ||
-                                        "Organization"}
+                                    {company.name || "Organization"}
                                 </p>
-
                             </div>
-
                         </div>
-
                     </div>
-
                 </div>
 
-                {/* =================================================
-                    LOGOUT
-                ================================================= */}
+                {/* LOGOUT */}
 
                 <div className="
                     px-4
@@ -707,7 +752,6 @@ function StaffSidebar({
                     border-t
                     border-white/10
                 ">
-
                     <button
                         type="button"
                         onClick={logout}
@@ -720,16 +764,12 @@ function StaffSidebar({
                             px-3
                             py-3
                             rounded-xl
-
                             text-red-200
-
                             hover:bg-red-500/10
                             hover:text-red-100
-
                             transition
                         "
                     >
-
                         <div className="
                             w-9
                             h-9
@@ -741,13 +781,10 @@ function StaffSidebar({
                             group-hover:bg-red-500/15
                             transition
                         ">
-                            <LogOut
-                                size={18}
-                            />
+                            <LogOut size={18} />
                         </div>
 
                         <div className="text-left">
-
                             <p className="
                                 text-sm
                                 font-semibold
@@ -762,13 +799,9 @@ function StaffSidebar({
                             ">
                                 End staff session
                             </p>
-
                         </div>
-
                     </button>
-
                 </div>
-
             </aside>
         </>
     );

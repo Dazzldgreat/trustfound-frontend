@@ -1,15 +1,18 @@
+
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import QRCode from "react-qr-code";
 import {
     CheckCircle,
     Clock,
-    ShieldCheck,
+    Copy,
     ScanLine,
+    ShieldCheck,
 } from "lucide-react";
 
 import { API, API_BASE_URL } from "../../config";
 import { upgradeLegacyColor } from "../../theme";
+
 const DEFAULT_WEBSITE_SETTINGS = {
     primary_color: "#EA580C",
     secondary_color: "#C2410C",
@@ -47,6 +50,15 @@ const ALLOWED_FONTS = [
     "Georgia",
     "Verdana",
 ];
+
+function getStoredObject(key) {
+    try {
+        const value = localStorage.getItem(key);
+        return value ? JSON.parse(value) : null;
+    } catch {
+        return null;
+    }
+}
 
 function isValidColor(value) {
     if (typeof value !== "string") return false;
@@ -148,19 +160,9 @@ function applyWebsiteTheme(settings = {}) {
     };
 }
 
-function getStoredObject(key) {
-    try {
-        const value = localStorage.getItem(key);
-        return value ? JSON.parse(value) : null;
-    } catch {
-        return null;
-    }
-}
-
 function FoundSuccess() {
     const { id, companySlug } = useParams();
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
 
     const storedCompany = getStoredObject("company");
     const storedUser = getStoredObject("user");
@@ -180,9 +182,7 @@ function FoundSuccess() {
         storedUser?.organizationSlug ||
         "";
 
-    // =========================================================
     // COMPANY ROUTE
-    // =========================================================
 
     const companyRoute = useCallback(
         (path = "") => {
@@ -203,9 +203,7 @@ function FoundSuccess() {
         [activeCompanySlug]
     );
 
-    // =========================================================
     // WEBSITE SETTINGS
-    // =========================================================
 
     const [websiteSettings, setWebsiteSettings] = useState(
         DEFAULT_WEBSITE_SETTINGS
@@ -232,10 +230,7 @@ function FoundSuccess() {
                     setWebsiteSettings(applyWebsiteTheme(result));
                 }
             } catch (error) {
-                console.error(
-                    "WEBSITE SETTINGS ERROR:",
-                    error
-                );
+                console.error("WEBSITE SETTINGS ERROR:", error);
             }
         };
 
@@ -263,46 +258,15 @@ function FoundSuccess() {
         "--site-font": `"${websiteSettings.font_family}", sans-serif`,
     };
 
-    // =========================================================
-    // STATE
-    // =========================================================
+    // ITEM STATE
 
     const [item, setItem] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    const [scannedSuccessfully, setScannedSuccessfully] =
-        useState(searchParams.get("scanned") === "success");
-
-    const [checkingScan, setCheckingScan] = useState(false);
-
-    // =========================================================
-    // IMAGE
-    // =========================================================
-
-    const getImageUrl = (imagePath) => {
-        if (!imagePath) return "";
-
-        if (
-            imagePath.startsWith("http://") ||
-            imagePath.startsWith("https://")
-        ) {
-            return imagePath;
-        }
-
-        return `${API_BASE_URL}${
-            imagePath.startsWith("/")
-                ? imagePath
-                : `/${imagePath}`
-        }`;
-    };
-
-    // =========================================================
-    // FETCH ITEM
-    // =========================================================
+    // FETCH REPORTED ITEM
 
     const fetchItem = useCallback(async () => {
         if (!id) {
-            console.error("Found item ID is missing.");
             navigate(companyRoute("/dashboard"));
             return;
         }
@@ -327,8 +291,6 @@ function FoundSuccess() {
 
             const data = await response.json();
 
-            console.log("FOUND SUCCESS DATA:", data);
-
             if (!response.ok) {
                 throw new Error(
                     data.detail ||
@@ -338,19 +300,8 @@ function FoundSuccess() {
             }
 
             setItem(data);
-
-            if (
-                data.scanned === true ||
-                data.is_scanned === true ||
-                data.qr_scanned === true ||
-                data.verified === true ||
-                data.verification_status === "scanned" ||
-                data.verification_status === "verified"
-            ) {
-                setScannedSuccessfully(true);
-            }
         } catch (error) {
-            console.error("Error loading found item:", error);
+            console.error("ERROR LOADING FOUND ITEM:", error);
 
             alert(error.message || "Unable to load found item.");
 
@@ -360,104 +311,67 @@ function FoundSuccess() {
         }
     }, [id, access, navigate, companyRoute]);
 
-    // =========================================================
-    // LOAD ITEM
-    // =========================================================
-
     useEffect(() => {
         fetchItem();
     }, [fetchItem]);
 
-    // =========================================================
-    // CHECK SCAN STATUS
-    // =========================================================
+    // IMAGE URL
 
-    const checkScanStatus = useCallback(async () => {
-        if (!id || !access) return;
+    const getImageUrl = (imagePath) => {
+        if (!imagePath) return "";
+
+        if (
+            imagePath.startsWith("http://") ||
+            imagePath.startsWith("https://")
+        ) {
+            return imagePath;
+        }
+
+        return `${API_BASE_URL}${
+            imagePath.startsWith("/")
+                ? imagePath
+                : `/${imagePath}`
+        }`;
+    };
+
+    // VERIFICATION CODE
+
+    const verificationCode = item?.verification_token
+        ? String(item.verification_token)
+        : "";
+
+    // QR CODE VALUE
+
+    const qrValue = verificationCode
+        ? `${API}/staff/verify-found-item/${verificationCode}/`
+        : "";
+
+    // COPY VERIFICATION CODE
+
+    const copyVerificationCode = async () => {
+        if (!verificationCode) return;
 
         try {
-            setCheckingScan(true);
-
-            const response = await fetch(
-                `${API}/found-items/${id}/`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${access}`,
-                    },
-                }
-            );
-
-            if (!response.ok) return;
-
-            const data = await response.json();
-
-            console.log("SCAN STATUS:", data);
-
-            setItem(data);
-
-            if (
-                data.scanned === true ||
-                data.is_scanned === true ||
-                data.qr_scanned === true ||
-                data.verified === true ||
-                data.verification_status === "scanned" ||
-                data.verification_status === "verified"
-            ) {
-                setScannedSuccessfully(true);
-            }
+            await navigator.clipboard.writeText(verificationCode);
+            alert("Verification code copied successfully.");
         } catch (error) {
-            console.error("SCAN STATUS ERROR:", error);
-        } finally {
-            setCheckingScan(false);
+            console.error("COPY ERROR:", error);
+            alert("Unable to copy code. Please copy it manually.");
         }
-    }, [id, access]);
+    };
 
-    // =========================================================
-    // AUTOMATIC STATUS CHECK
-    // =========================================================
-
-    useEffect(() => {
-        if (!id || !access || scannedSuccessfully) return;
-
-        const interval = setInterval(() => {
-            checkScanStatus();
-        }, 5000);
-
-        return () => clearInterval(interval);
-    }, [id, access, scannedSuccessfully, checkScanStatus]);
-
-    // =========================================================
-    // SCANNED STATUS
-    // =========================================================
-
-    const statusIsScanned = scannedSuccessfully;
-
-    // =========================================================
     // LOADING
-    // =========================================================
 
     if (loading) {
         return (
             <div
-                className="found-success-theme min-h-screen flex items-center justify-center px-4"
+                className="min-h-screen flex items-center justify-center"
                 style={{
                     ...themeStyle,
                     backgroundColor: "var(--site-background)",
                     color: "var(--site-text)",
-                    fontFamily: "var(--site-font)",
                 }}
             >
-                <style>{`
-                    .found-success-theme {
-                        background: var(--site-background);
-                        color: var(--site-text);
-                        font-family: var(--site-font);
-                    }
-                    .found-success-theme .site-heading {
-                        color: var(--site-heading);
-                    }
-                `}</style>
-
                 <div className="text-center">
                     <div
                         className="w-14 h-14 mx-auto rounded-full border-4 animate-spin"
@@ -467,7 +381,7 @@ function FoundSuccess() {
                         }}
                     />
 
-                    <h2 className="text-xl font-bold mt-5 site-heading">
+                    <h2 className="text-xl font-bold mt-5">
                         Loading submission...
                     </h2>
 
@@ -479,48 +393,31 @@ function FoundSuccess() {
         );
     }
 
-    // =========================================================
     // ITEM NOT FOUND
-    // =========================================================
 
     if (!item) {
         return (
             <div
-                className="found-success-theme min-h-screen flex items-center justify-center px-4"
+                className="min-h-screen flex items-center justify-center px-4"
                 style={{
                     ...themeStyle,
                     backgroundColor: "var(--site-background)",
                     color: "var(--site-text)",
-                    fontFamily: "var(--site-font)",
                 }}
             >
-                <style>{`
-                    .found-success-theme {
-                        background: var(--site-background);
-                        color: var(--site-text);
-                        font-family: var(--site-font);
-                    }
-                    .found-success-theme .site-heading {
-                        color: var(--site-heading);
-                    }
-                    .found-success-theme .site-button {
-                        background: var(--site-primary);
-                        color: var(--site-button-text);
-                        border-radius: var(--site-radius);
-                    }
-                `}</style>
-
                 <div className="text-center">
-                    <h2 className="text-xl font-bold site-heading">
+                    <h2 className="text-xl font-bold">
                         Found item could not be loaded.
                     </h2>
 
                     <button
                         type="button"
-                        onClick={() =>
-                            navigate(companyRoute("/dashboard"))
-                        }
-                        className="site-button mt-5 px-6 py-3 font-semibold"
+                        onClick={() => navigate(companyRoute("/dashboard"))}
+                        className="mt-5 px-6 py-3 font-semibold rounded-lg"
+                        style={{
+                            backgroundColor: "var(--site-primary)",
+                            color: "var(--site-button-text)",
+                        }}
                     >
                         Return to Dashboard
                     </button>
@@ -529,17 +426,7 @@ function FoundSuccess() {
         );
     }
 
-    // =========================================================
-    // QR VALUE
-    // =========================================================
-
-    const qrValue = item.verification_token
-        ? `${API}/staff/verify-found-item/${item.verification_token}/`
-        : "";
-
-    // =========================================================
     // PAGE
-    // =========================================================
 
     return (
         <div
@@ -570,10 +457,6 @@ function FoundSuccess() {
                     color: var(--site-heading);
                 }
 
-                .found-success-theme .site-text {
-                    color: var(--site-text);
-                }
-
                 .found-success-theme .site-muted {
                     color: var(--site-text);
                     opacity: 0.72;
@@ -587,34 +470,14 @@ function FoundSuccess() {
                     border-radius: var(--site-radius);
                 }
 
-                .found-success-theme .site-primary-surface {
-                    background: var(--site-primary);
-                    color: var(--site-button-text);
-                }
-
                 .found-success-theme .site-button {
                     background: var(--site-primary);
                     color: var(--site-button-text);
                     border-radius: var(--site-radius);
-                    transition: background-color 0.2s ease;
                 }
 
                 .found-success-theme .site-button:hover {
                     background: var(--site-secondary);
-                }
-
-                .found-success-theme .site-success {
-                    background: var(--site-border-fill);
-                    border-color: var(--site-border-line);
-                    border-style: var(--site-border-style);
-                    border-width: var(--site-border-width);
-                    border-radius: var(--site-radius);
-                }
-
-                .found-success-theme .site-field-line {
-                    border-color: var(--site-border-line);
-                    border-style: var(--site-border-style);
-                    border-width: var(--site-border-width);
                 }
             `}</style>
 
@@ -624,60 +487,20 @@ function FoundSuccess() {
                     maxWidth: "var(--site-content-width)",
                 }}
             >
-                {/* SCANNED SUCCESS MESSAGE */}
-
-                {scannedSuccessfully && (
-                    <div className="site-success mb-8 p-7 shadow-lg">
-                        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
-                            <div
-                                className="w-20 h-20 rounded-full flex items-center justify-center shrink-0 shadow-md"
-                                style={{
-                                    backgroundColor: "var(--site-primary)",
-                                }}
-                            >
-                                <CheckCircle
-                                    size={48}
-                                    className="text-white"
-                                />
-                            </div>
-
-                            <div className="flex-1">
-                                <h2 className="text-2xl md:text-3xl font-black site-heading">
-                                    Scanned Successfully
-                                </h2>
-
-                                <p className="site-muted mt-2 text-lg">
-                                    Your found item QR code has been successfully scanned by staff.
-                                </p>
-
-                                <div className="flex items-center justify-center sm:justify-start gap-2 mt-4 text-sm font-semibold">
-                                    <ShieldCheck size={18} />
-                                    <span>
-                                        Staff verification completed
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* SUCCESS CARD */}
+                {/* SUBMISSION CONFIRMATION */}
 
                 <div className="site-card shadow-xl overflow-hidden">
-                    {/* HEADER */}
-
                     <div
-                        className="p-8 site-primary-surface"
+                        className="p-8"
                         style={{
-                            backgroundColor: statusIsScanned
-                                ? "var(--site-primary)"
-                                : "var(--site-primary)",
+                            backgroundColor: "var(--site-primary)",
+                            color: "var(--site-button-text)",
                         }}
                     >
                         <div className="flex items-center gap-4">
                             <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shrink-0">
                                 <CheckCircle
-                                    size={48}
+                                    size={44}
                                     style={{
                                         color: "var(--site-primary)",
                                     }}
@@ -685,18 +508,17 @@ function FoundSuccess() {
                             </div>
 
                             <div>
-                                <h1 className="text-3xl font-bold">
-                                    Found Item Submitted Successfully
+                                <h1 className="text-2xl md:text-3xl font-bold">
+                                    Found Item Reported Successfully
                                 </h1>
 
-                                <p className="opacity-90 mt-2">
-                                    Thank you for helping return a lost item.
+                                <p className="mt-2 opacity-90">
+                                    Your report has been saved. Your verification
+                                    QR code and code are ready.
                                 </p>
                             </div>
                         </div>
                     </div>
-
-                    {/* BODY */}
 
                     <div className="grid lg:grid-cols-2 gap-10 p-6 md:p-10">
                         {/* ITEM INFORMATION */}
@@ -710,54 +532,42 @@ function FoundSuccess() {
                                 <img
                                     src={getImageUrl(item.image)}
                                     alt={item.item_name || "Found item"}
-                                    className="w-full h-80 item-image zoomable"
+                                    className="w-full h-80 object-cover"
                                     style={{
                                         borderRadius: "var(--site-radius)",
                                         border: "var(--site-border-width) var(--site-border-style) var(--site-border-line)",
                                     }}
                                 />
                             ) : (
-                                <div
-                                    className="w-full h-80 flex items-center justify-center site-surface site-muted"
-                                >
+                                <div className="w-full h-80 flex items-center justify-center site-surface site-muted">
                                     No Image Uploaded
                                 </div>
                             )}
 
                             <div className="mt-8 space-y-4">
                                 <div className="flex justify-between gap-5">
-                                    <span className="font-semibold">
-                                        Item Name
-                                    </span>
+                                    <span className="font-semibold">Item Name</span>
                                     <span className="text-right">
                                         {item.item_name || "—"}
                                     </span>
                                 </div>
 
                                 <div className="flex justify-between gap-5">
-                                    <span className="font-semibold">
-                                        Category
-                                    </span>
+                                    <span className="font-semibold">Category</span>
                                     <span className="text-right">
                                         {item.category || "—"}
                                     </span>
                                 </div>
 
                                 <div className="flex justify-between gap-5">
-                                    <span className="font-semibold">
-                                        Location Found
-                                    </span>
+                                    <span className="font-semibold">Location Found</span>
                                     <span className="text-right">
-                                        {item.location_found ||
-                                            item.location ||
-                                            "—"}
+                                        {item.location_found || item.location || "—"}
                                     </span>
                                 </div>
 
                                 <div className="flex justify-between gap-5">
-                                    <span className="font-semibold">
-                                        Date Found
-                                    </span>
+                                    <span className="font-semibold">Date Found</span>
                                     <span className="text-right">
                                         {item.date_found || "—"}
                                     </span>
@@ -765,9 +575,7 @@ function FoundSuccess() {
 
                                 {item.time_found && (
                                     <div className="flex justify-between gap-5">
-                                        <span className="font-semibold">
-                                            Time Found
-                                        </span>
+                                        <span className="font-semibold">Time Found</span>
                                         <span className="text-right">
                                             {item.time_found}
                                         </span>
@@ -775,119 +583,100 @@ function FoundSuccess() {
                                 )}
 
                                 <div>
-                                    <p className="font-semibold mb-2">
-                                        Description
-                                    </p>
+                                    <p className="font-semibold mb-2">Description</p>
                                     <p className="site-muted">
-                                        {item.description ||
-                                            "No description provided."}
+                                        {item.description || "No description provided."}
                                     </p>
                                 </div>
                             </div>
                         </div>
 
-                        {/* VERIFICATION */}
+                        {/* QR AND VERIFICATION CODE */}
 
                         <div>
-                            <h2 className="text-2xl font-bold mb-6 site-heading">
-                                Staff Verification QR
+                            <h2 className="text-2xl font-bold mb-2 site-heading">
+                                Your Verification QR Code
                             </h2>
 
-                            {scannedSuccessfully ? (
-                                /* SCANNED SUCCESS STATE */
+                            <p className="site-muted mb-6">
+                                Keep this QR code and verification code safe.
+                                Staff will use either one to retrieve your report.
+                            </p>
 
-                                <div className="site-success p-8">
-                                    <div className="flex flex-col items-center text-center">
-                                        <div
-                                            className="w-24 h-24 rounded-full flex items-center justify-center"
-                                            style={{
-                                                backgroundColor: "var(--site-primary)",
-                                            }}
-                                        >
-                                            <CheckCircle
-                                                size={60}
-                                                className="text-white"
-                                            />
-                                        </div>
-
-                                        <h3 className="text-2xl font-black site-heading mt-6">
-                                            QR Code Scanned Successfully
-                                        </h3>
-
-                                        <p className="site-muted mt-3">
-                                            Staff has successfully scanned your submission.
-                                        </p>
-
-                                        <div
-                                            className="mt-6 w-full p-5 site-surface"
-                                        >
-                                            <div className="flex items-center justify-center gap-2 font-bold">
-                                                <ShieldCheck size={20} />
-                                                Verification Confirmed
-                                            </div>
-
-                                            <p className="site-muted text-sm mt-2">
-                                                Your found item has been presented to staff for verification and custody processing.
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : (
-                                /* QR WAITING STATE */
-
-                                <div className="site-surface p-8 flex flex-col items-center">
-                                    {qrValue ? (
-                                        <div
-                                            className="bg-white p-4"
-                                            style={{
-                                                borderRadius: "var(--site-radius)",
-                                            }}
-                                        >
-                                            <QRCode
-                                                value={qrValue}
-                                                size={240}
-                                            />
-                                        </div>
-                                    ) : (
-                                        <div className="w-[240px] h-[240px] flex items-center justify-center text-center p-5 site-surface site-muted">
-                                            Verification QR is not available.
-                                        </div>
-                                    )}
-
-                                    <div className="flex items-center gap-2 mt-6">
-                                        <ScanLine
-                                            size={22}
-                                            style={{
-                                                color: "var(--site-primary)",
-                                            }}
+                            <div className="site-surface p-8 flex flex-col items-center">
+                                {qrValue ? (
+                                    <div className="bg-white p-4 rounded-xl">
+                                        <QRCode
+                                            value={qrValue}
+                                            size={240}
                                         />
-
-                                        <p className="font-semibold">
-                                            Waiting for Staff to Scan
-                                        </p>
                                     </div>
-
-                                    <p className="site-muted text-sm text-center mt-2">
-                                        Scan this QR Code at the Lost & Found Office.
+                                ) : (
+                                    <p className="site-muted">
+                                        Verification QR is not available.
                                     </p>
+                                )}
 
-                                    {checkingScan && (
-                                        <div
-                                            className="flex items-center gap-2 mt-4 text-sm"
-                                            style={{
-                                                color: "var(--site-primary)",
-                                            }}
-                                        >
-                                            <Clock size={16} />
-                                            Checking scan status...
-                                        </div>
-                                    )}
+                                <div className="flex items-center gap-2 mt-6 font-semibold">
+                                    <ScanLine
+                                        size={22}
+                                        style={{
+                                            color: "var(--site-primary)",
+                                        }}
+                                    />
+                                    QR Code Ready
                                 </div>
-                            )}
 
-                            {/* RECEIPT */}
+                                <p className="site-muted text-sm text-center mt-2">
+                                    Present this QR code to a staff member.
+                                </p>
+                            </div>
 
-                            <div className="mt-8 p-6 site-surface">
+                            {/* MANUAL CODE */}
+
+                            <div className="site-card shadow p-6 mt-6">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <ShieldCheck
+                                        size={22}
+                                        style={{
+                                            color: "var(--site-primary)",
+                                        }}
+                                    />
+
+                                    <h3 className="font-bold site-heading">
+                                        Manual Verification Code
+                                    </h3>
+                                </div>
+
+                                <p className="site-muted text-sm mb-4">
+                                    If the QR code cannot be scanned, give staff
+                                    this code instead.
+                                </p>
+
+                                <div
+                                    className="p-4 rounded-lg text-center break-all font-mono font-bold text-lg tracking-wide"
+                                    style={{
+                                        backgroundColor: "var(--site-border-fill)",
+                                        border: "1px solid var(--site-border-line)",
+                                    }}
+                                >
+                                    {verificationCode || "Code unavailable"}
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={copyVerificationCode}
+                                    disabled={!verificationCode}
+                                    className="site-button w-full mt-4 py-3 font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+                                >
+                                    <Copy size={18} />
+                                    Copy Verification Code
+                                </button>
+                            </div>
+
+                            {/* SUBMISSION RECEIPT */}
+
+                            <div className="site-surface p-6 mt-6">
                                 <h3 className="font-bold text-lg mb-4 site-heading">
                                     Submission Receipt
                                 </h3>
@@ -896,24 +685,15 @@ function FoundSuccess() {
                                     <div className="flex justify-between gap-4">
                                         <span>Submission ID</span>
                                         <span className="font-bold">
-                                            FD-
-                                            {String(item.id).padStart(5, "0")}
+                                            FD-{String(item.id).padStart(5, "0")}
                                         </span>
                                     </div>
 
                                     <div className="flex justify-between gap-4">
                                         <span>Status</span>
-                                        <span
-                                            className="font-bold text-right"
-                                            style={{
-                                                color: statusIsScanned
-                                                    ? "var(--site-primary)"
-                                                    : "var(--site-secondary)",
-                                            }}
-                                        >
-                                            {statusIsScanned
-                                                ? "Scanned Successfully"
-                                                : "Pending Staff Verification"}
+                                        <span className="font-bold text-right flex items-center gap-2">
+                                            <Clock size={16} />
+                                            Awaiting Physical Verification
                                         </span>
                                     </div>
 
@@ -930,29 +710,31 @@ function FoundSuccess() {
 
                             {/* NEXT STEPS */}
 
-                            <div className="mt-8 p-6 site-surface">
+                            <div className="site-surface p-6 mt-6">
                                 <h3 className="font-bold mb-4 site-heading">
                                     What Happens Next?
                                 </h3>
 
                                 <ol className="space-y-3 list-decimal list-inside">
                                     <li>
-                                        Bring the found item to the Lost & Found Office.
+                                        Take the physical found item to the Lost
+                                        & Found Office.
                                     </li>
                                     <li>
-                                        Present this QR Code to a staff member.
+                                        Show staff your QR code or provide your
+                                        manual verification code.
                                     </li>
                                     <li>
-                                        Staff scans the QR Code.
+                                        Staff retrieves your report and checks
+                                        the physical item.
                                     </li>
                                     <li>
-                                        Staff verifies the item is now in official custody.
+                                        Staff confirms the verification after
+                                        inspecting the item.
                                     </li>
                                     <li>
-                                        The system automatically compares your item against reported lost items.
-                                    </li>
-                                    <li>
-                                        If a match is found, the owner will be notified.
+                                        The system can then continue its matching
+                                        process.
                                     </li>
                                 </ol>
                             </div>
@@ -963,16 +745,14 @@ function FoundSuccess() {
                                 <button
                                     type="button"
                                     onClick={() => window.print()}
-                                    className="site-surface site-text flex-1 py-4 font-semibold"
+                                    className="site-surface flex-1 py-4 font-semibold"
                                 >
                                     Print Receipt
                                 </button>
 
                                 <button
                                     type="button"
-                                    onClick={() =>
-                                        navigate(companyRoute("/dashboard"))
-                                    }
+                                    onClick={() => navigate(companyRoute("/dashboard"))}
                                     className="site-button flex-1 py-4 font-semibold"
                                 >
                                     Dashboard

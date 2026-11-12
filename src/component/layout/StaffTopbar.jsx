@@ -10,28 +10,17 @@ import {
     ChevronRight,
     ShieldCheck,
     Building2,
-    UserCircle,
 } from "lucide-react";
 
-import {
-    useNavigate,
-} from "react-router-dom";
-
+import { useNavigate } from "react-router-dom";
 import { API } from "../../config";
+import { resolveMediaUrl } from "../../theme";
+
 function StaffTopbar({
     openSidebar,
     companySlug,
 }) {
     const navigate = useNavigate();
-
-    const [staff, setStaff] = useState({});
-    const [company, setCompany] = useState({});
-    const [notificationCount, setNotificationCount] =
-        useState(0);
-
-    // ============================================================
-    // SAFE LOCAL STORAGE
-    // ============================================================
 
     const getStoredObject = (key) => {
         try {
@@ -43,21 +32,24 @@ function StaffTopbar({
         }
     };
 
-    // ============================================================
-    // COMPANY
-    // ============================================================
+    const storedCompany = getStoredObject("company");
 
-    const storedCompany =
-        getStoredObject("company");
+   const [staff] = useState(() =>
+    getStoredObject("staff")
+);
+
+    const [company, setCompany] = useState(storedCompany);
+
+    const [notificationCount, setNotificationCount] =
+        useState(0);
+
+    const [logoFailed, setLogoFailed] = useState(false);
 
     const activeCompanySlug =
         companySlug ||
+        company.slug ||
         storedCompany.slug ||
         "";
-
-    // ============================================================
-    // COMPANY ROUTE
-    // ============================================================
 
     const companyRoute = (path = "") => {
         if (!activeCompanySlug) {
@@ -70,19 +62,119 @@ function StaffTopbar({
     };
 
     // ============================================================
-    // LOAD STAFF + COMPANY
+    // LOAD COMPANY PROFILE + WEBSITE LOGO
     // ============================================================
 
     useEffect(() => {
-        const storedStaff =
-            getStoredObject("staff");
+        if (!activeCompanySlug) return;
 
-        const latestCompany =
-            getStoredObject("company");
+        let cancelled = false;
 
-        setStaff(storedStaff);
-        setCompany(latestCompany);
+        const loadCompany = async () => {
+            try {
+                const [profileResult, websiteResult] =
+                    await Promise.allSettled([
+                        fetch(
+                            `${API}/company/public/${encodeURIComponent(
+                                activeCompanySlug
+                            )}/`
+                        ),
+                        fetch(
+                            `${API}/company/public/${encodeURIComponent(
+                                activeCompanySlug
+                            )}/website/`
+                        ),
+                    ]);
+
+                let profileData = {};
+                let websiteData = {};
+
+                if (profileResult.status === "fulfilled") {
+                    const response = profileResult.value;
+
+                    if (response.ok) {
+                        profileData =
+                            await response.json();
+                    }
+                }
+
+                if (websiteResult.status === "fulfilled") {
+                    const response = websiteResult.value;
+
+                    if (response.ok) {
+                        websiteData =
+                            await response.json();
+                    }
+                }
+
+                const companyData =
+                    profileData.company ||
+                    profileData.data?.company ||
+                    profileData;
+
+                const websiteSettings =
+                    websiteData.settings ||
+                    websiteData.website_settings ||
+                    websiteData.website ||
+                    websiteData.data?.settings ||
+                    websiteData.data?.website_settings ||
+                    websiteData.data ||
+                    websiteData;
+
+                const latestStoredCompany =
+                    getStoredObject("company");
+
+                const logo =
+                    websiteSettings.logo_url ||
+                    websiteSettings.logo ||
+                    companyData.logo_url ||
+                    companyData.logo ||
+                    latestStoredCompany.logo_url ||
+                    latestStoredCompany.logo ||
+                    null;
+
+                const updatedCompany = {
+                    ...latestStoredCompany,
+                    ...companyData,
+                    name:
+                        companyData.name ||
+                        latestStoredCompany.name ||
+                        "Company",
+                    slug:
+                        companyData.slug ||
+                        activeCompanySlug,
+                    logo,
+                    logo_url: logo,
+                };
+
+                if (!cancelled) {
+                    setCompany(updatedCompany);
+                    setLogoFailed(false);
+
+                    localStorage.setItem(
+                        "company",
+                        JSON.stringify(updatedCompany)
+                    );
+                }
+            } catch (error) {
+                console.error(
+                    "Staff topbar company load error:",
+                    error
+                );
+            }
+        };
+
+        loadCompany();
+
+        return () => {
+            cancelled = true;
+        };
     }, [activeCompanySlug]);
+
+    // ============================================================
+    // LOAD STAFF DETAILS
+    // ============================================================
+
 
     // ============================================================
     // STAFF NAME
@@ -100,9 +192,7 @@ function StaffTopbar({
     // ============================================================
 
     const getInitials = (name) => {
-        if (!name) {
-            return "S";
-        }
+        if (!name) return "S";
 
         const parts = name
             .trim()
@@ -121,137 +211,107 @@ function StaffTopbar({
         ).toUpperCase();
     };
 
-    const staffInitials =
-        getInitials(staffName);
+    const staffInitials = getInitials(staffName);
 
     // ============================================================
-    // COMPANY INITIAL
+    // COMPANY INITIAL + LOGO URL
     // ============================================================
 
-    const companyInitial =
-        (
-            company.name ||
-            activeCompanySlug ||
-            "C"
-        )
-            .charAt(0)
-            .toUpperCase();
+    const companyInitial = (
+        company.name ||
+        activeCompanySlug ||
+        "C"
+    )
+        .charAt(0)
+        .toUpperCase();
+
+    const companyLogoUrl = resolveMediaUrl(
+        company.logo_url ||
+        company.logo ||
+        ""
+    );
 
     // ============================================================
     // FETCH NOTIFICATION COUNT
     // ============================================================
 
-    const fetchNotificationCount =
-        useCallback(async () => {
-            const access =
-                localStorage.getItem(
-                    "access_token"
-                ) ||
-                localStorage.getItem(
-                    "access"
-                );
+    const fetchNotificationCount = useCallback(async () => {
+        const access =
+            localStorage.getItem("access_token") ||
+            localStorage.getItem("access");
 
-            if (!access) {
-                setNotificationCount(0);
-                return;
-            }
+        if (!access || !activeCompanySlug) {
+            setNotificationCount(0);
+            return;
+        }
 
-            if (!activeCompanySlug) {
-                setNotificationCount(0);
-                return;
-            }
+        try {
+            const url =
+                `${API}/staff/notifications/count/` +
+                `?company_slug=${encodeURIComponent(
+                    activeCompanySlug
+                )}`;
+
+            const response = await fetch(url, {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${access}`,
+                    Accept: "application/json",
+                },
+            });
+
+            let data = {};
 
             try {
-                const url =
-                    `${API}/staff/notifications/count/` +
-                    `?company_slug=${encodeURIComponent(
-                        activeCompanySlug
-                    )}`;
-
-                const response =
-                    await fetch(url, {
-                        method: "GET",
-
-                        headers: {
-                            Authorization:
-                                `Bearer ${access}`,
-
-                            Accept:
-                                "application/json",
-                        },
-                    });
-
-                let data = {};
-
-                try {
-                    data =
-                        await response.json();
-                } catch {
-                    data = {};
-                }
-
-                // ==================================================
-                // AUTH ERROR
-                // ==================================================
-
-                if (
-                    response.status === 401 ||
-                    response.status === 403
-                ) {
-                    setNotificationCount(0);
-                    return;
-                }
-
-                // ==================================================
-                // SERVER ERROR
-                // ==================================================
-
-                if (!response.ok) {
-                    setNotificationCount(0);
-                    return;
-                }
-
-                // ==================================================
-                // COUNT
-                // ==================================================
-
-                const count = Number(
-                    data.count ??
-                        data.notification_count ??
-                        0
-                );
-
-                setNotificationCount(
-                    Number.isFinite(count)
-                        ? count
-                        : 0
-                );
+                data = await response.json();
             } catch {
-                setNotificationCount(0);
+                data = {};
             }
-        }, [activeCompanySlug]);
+
+            if (
+                response.status === 401 ||
+                response.status === 403 ||
+                !response.ok
+            ) {
+                setNotificationCount(0);
+                return;
+            }
+
+            const count = Number(
+                data.count ??
+                data.notification_count ??
+                0
+            );
+
+            setNotificationCount(
+                Number.isFinite(count) ? count : 0
+            );
+        } catch {
+            setNotificationCount(0);
+        }
+    }, [activeCompanySlug]);
 
     // ============================================================
-    // INITIAL LOAD
+    // INITIAL NOTIFICATION LOAD
     // ============================================================
 
-    useEffect(() => {
+   useEffect(() => {
+    const timeout = setTimeout(() => {
         fetchNotificationCount();
-    }, [fetchNotificationCount]);
+    }, 0);
 
+    return () => clearTimeout(timeout);
+}, [fetchNotificationCount]);
     // ============================================================
-    // AUTO REFRESH
+    // AUTO REFRESH NOTIFICATIONS
     // ============================================================
 
     useEffect(() => {
-        const interval =
-            setInterval(() => {
-                fetchNotificationCount();
-            }, 10000);
+        const interval = setInterval(() => {
+            fetchNotificationCount();
+        }, 10000);
 
-        return () => {
-            clearInterval(interval);
-        };
+        return () => clearInterval(interval);
     }, [fetchNotificationCount]);
 
     // ============================================================
@@ -260,9 +320,7 @@ function StaffTopbar({
 
     const openNotifications = () => {
         navigate(
-            companyRoute(
-                "/staff-notifications"
-            )
+            companyRoute("/staff-notifications")
         );
     };
 
@@ -295,10 +353,7 @@ function StaffTopbar({
                     gap-4
                 "
             >
-
-                {/* =================================================
-                    LEFT SIDE
-                ================================================= */}
+                {/* LEFT SIDE */}
 
                 <div className="
                     flex
@@ -306,9 +361,6 @@ function StaffTopbar({
                     min-w-0
                     gap-3
                 ">
-
-                    {/* MOBILE MENU */}
-
                     <button
                         type="button"
                         onClick={openSidebar}
@@ -332,19 +384,12 @@ function StaffTopbar({
 
                     {/* COMPANY LOGO */}
 
-                    <div className="
-                        flex-shrink-0
-                    ">
-
-                        {company.logo ? (
+                    <div className="flex-shrink-0">
+                        {companyLogoUrl && !logoFailed ? (
                             <img
-                                src={
-                                    company.logo
-                                }
-                                alt={
-                                    company.name ||
-                                    "Company"
-                                }
+                                src={companyLogoUrl}
+                                alt={`${company.name || "Company"} logo`}
+                                onError={() => setLogoFailed(true)}
                                 className="
                                     w-10
                                     h-10
@@ -380,17 +425,15 @@ function StaffTopbar({
                                 {companyInitial}
                             </div>
                         )}
-
                     </div>
 
-                    {/* PAGE CONTEXT */}
+                    {/* DESKTOP PAGE CONTEXT */}
 
                     <div className="
                         min-w-0
                         hidden
                         sm:block
                     ">
-
                         <div className="
                             flex
                             items-center
@@ -399,21 +442,11 @@ function StaffTopbar({
                             text-slate-400
                             mb-0.5
                         ">
-
-                            <span>
-                                Staff Portal
-                            </span>
-
-                            <ChevronRight
-                                size={13}
-                            />
-
-                            <span className="
-                                text-slate-500
-                            ">
+                            <span>Staff Portal</span>
+                            <ChevronRight size={13} />
+                            <span className="text-slate-500">
                                 Dashboard
                             </span>
-
                         </div>
 
                         <div className="
@@ -422,7 +455,6 @@ function StaffTopbar({
                             gap-2
                             min-w-0
                         ">
-
                             <h1 className="
                                 text-base
                                 lg:text-lg
@@ -432,8 +464,7 @@ function StaffTopbar({
                                 max-w-[220px]
                                 lg:max-w-[350px]
                             ">
-                                {company.name ||
-                                    "Staff Dashboard"}
+                                {company.name || "Staff Dashboard"}
                             </h1>
 
                             <span
@@ -451,15 +482,10 @@ function StaffTopbar({
                                     font-bold
                                 "
                             >
-                                <ShieldCheck
-                                    size={11}
-                                />
-
+                                <ShieldCheck size={11} />
                                 STAFF
                             </span>
-
                         </div>
-
                     </div>
 
                     {/* MOBILE TITLE */}
@@ -468,7 +494,6 @@ function StaffTopbar({
                         sm:hidden
                         min-w-0
                     ">
-
                         <p className="
                             text-sm
                             font-bold
@@ -485,17 +510,12 @@ function StaffTopbar({
                             truncate
                             max-w-[150px]
                         ">
-                            {company.name ||
-                                "Organization"}
+                            {company.name || "Organization"}
                         </p>
-
                     </div>
-
                 </div>
 
-                {/* =================================================
-                    RIGHT SIDE
-                ================================================= */}
+                {/* RIGHT SIDE */}
 
                 <div className="
                     flex
@@ -503,7 +523,6 @@ function StaffTopbar({
                     gap-2
                     sm:gap-4
                 ">
-
                     {/* ORGANIZATION INDICATOR */}
 
                     <div className="
@@ -518,7 +537,6 @@ function StaffTopbar({
                         border
                         border-slate-200
                     ">
-
                         <Building2
                             size={16}
                             className="text-slate-500"
@@ -531,13 +549,9 @@ function StaffTopbar({
                             max-w-[160px]
                             truncate
                         ">
-                            {company.name ||
-                                "Organization"}
+                            {company.name || "Organization"}
                         </span>
-
                     </div>
-
-                    {/* DIVIDER */}
 
                     <div className="
                         hidden
@@ -551,9 +565,7 @@ function StaffTopbar({
 
                     <button
                         type="button"
-                        onClick={
-                            openNotifications
-                        }
+                        onClick={openNotifications}
                         className="
                             relative
                             w-10
@@ -575,16 +587,9 @@ function StaffTopbar({
                         title="Notifications"
                         aria-label="Open notifications"
                     >
+                        <Bell size={20} strokeWidth={2} />
 
-                        <Bell
-                            size={20}
-                            strokeWidth={2}
-                        />
-
-                        {/* Notification dot */}
-
-                        {notificationCount >
-                            0 && (
+                        {notificationCount > 0 && (
                             <span
                                 className="
                                     absolute
@@ -606,13 +611,11 @@ function StaffTopbar({
                                     shadow-sm
                                 "
                             >
-                                {notificationCount >
-                                99
+                                {notificationCount > 99
                                     ? "99+"
                                     : notificationCount}
                             </span>
                         )}
-
                     </button>
 
                     {/* STAFF PROFILE */}
@@ -623,9 +626,6 @@ function StaffTopbar({
                         gap-2.5
                         pl-1
                     ">
-
-                        {/* Avatar */}
-
                         <div
                             className="
                                 w-10
@@ -647,14 +647,11 @@ function StaffTopbar({
                             {staffInitials}
                         </div>
 
-                        {/* Staff details */}
-
                         <div className="
                             hidden
                             sm:block
                             min-w-0
                         ">
-
                             <p className="
                                 text-sm
                                 font-semibold
@@ -671,15 +668,12 @@ function StaffTopbar({
                                 gap-1.5
                                 mt-0.5
                             ">
-
-                                <span
-                                    className="
-                                        w-1.5
-                                        h-1.5
-                                        rounded-full
-                                        bg-emerald-500
-                                    "
-                                />
+                                <span className="
+                                    w-1.5
+                                    h-1.5
+                                    rounded-full
+                                    bg-emerald-500
+                                " />
 
                                 <span className="
                                     text-[10px]
@@ -688,15 +682,10 @@ function StaffTopbar({
                                 ">
                                     Staff Account
                                 </span>
-
                             </div>
-
                         </div>
-
                     </div>
-
                 </div>
-
             </div>
         </header>
     );

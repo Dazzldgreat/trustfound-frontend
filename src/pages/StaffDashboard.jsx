@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 
 import { API } from "../config";
+import { resolveMediaUrl } from "../theme";
 function StaffDashboard() {
     const navigate = useNavigate();
     const { companySlug } = useParams();
@@ -45,7 +46,10 @@ function StaffDashboard() {
 
     const storedCompanyId = storedCompany.id ?? null;
     const storedCompanyName = storedCompany.name || "Company";
-    const storedCompanyLogo = storedCompany.logo || null;
+    const storedCompanyLogo =
+    storedCompany.logo_url ||
+    storedCompany.logo ||
+    null;;
 
     const storedSlug =
         localStorage.getItem("companySlug") ||
@@ -457,71 +461,102 @@ function StaffDashboard() {
     // ============================================================
     // FETCH COMPANY
     // ============================================================
+const fetchCompany = useCallback(async () => {
+    if (!activeCompanySlug) {
+        return;
+    }
 
-    const fetchCompany = useCallback(async () => {
-        if (!activeCompanySlug) {
-            return;
-        }
+    try {
+        const [companyResponse, websiteResponse] =
+            await Promise.all([
+                fetch(
+                    `${API}/company/public/${encodeURIComponent(
+                        activeCompanySlug
+                    )}/`
+                ),
+                fetch(
+                    `${API}/company/public/${encodeURIComponent(
+                        activeCompanySlug
+                    )}/website/`
+                ),
+            ]);
 
-        try {
-            const response = await fetch(
-                `${API}/company/public/${encodeURIComponent(
-                    activeCompanySlug
-                )}/`
-            );
+        const companyDataResponse =
+            await companyResponse.json();
 
-            const data = await response.json();
+        const websiteDataResponse =
+            websiteResponse.ok
+                ? await websiteResponse.json()
+                : {};
 
-            if (!response.ok) {
-                throw new Error(
-                    data.error ||
-                        data.detail ||
-                        "Unable to load company."
-                );
-            }
-
-            const companyData =
-                data.company || data;
-
-            const updatedCompany = {
-                id:
-                    companyData.id ??
-                    storedCompanyId ??
-                    null,
-
-                name:
-                    companyData.name ||
-                    storedCompanyName ||
-                    "Company",
-
-                slug:
-                    companyData.slug ||
-                    activeCompanySlug,
-
-                logo:
-                    companyData.logo ||
-                    storedCompanyLogo ||
-                    null,
-            };
-
-            setCompany(updatedCompany);
-
-            localStorage.setItem(
-                "company",
-                JSON.stringify(updatedCompany)
-            );
-        } catch (error) {
-            console.error(
-                "Company load error:",
-                error
+        if (!companyResponse.ok) {
+            throw new Error(
+                companyDataResponse.error ||
+                    companyDataResponse.detail ||
+                    "Unable to load company."
             );
         }
-    }, [
-        activeCompanySlug,
-        storedCompanyId,
-        storedCompanyName,
-        storedCompanyLogo,
-    ]);
+
+        const companyData =
+            companyDataResponse.company ||
+            companyDataResponse;
+
+        const websiteSettings =
+            websiteDataResponse.settings ||
+            websiteDataResponse.website_settings ||
+            websiteDataResponse.website ||
+            websiteDataResponse.data ||
+            websiteDataResponse;
+
+        const logo =
+            websiteSettings.logo_url ||
+            websiteSettings.logo ||
+            companyData.logo_url ||
+            companyData.logo ||
+            storedCompanyLogo ||
+            null;
+
+        const updatedCompany = {
+            id:
+                companyData.id ??
+                storedCompanyId ??
+                null,
+
+            name:
+                companyData.name ||
+                storedCompanyName ||
+                "Company",
+
+            slug:
+                companyData.slug ||
+                activeCompanySlug,
+
+            logo: logo,
+            logo_url: logo,
+        };
+
+        setCompany(updatedCompany);
+
+        localStorage.setItem(
+            "company",
+            JSON.stringify(updatedCompany)
+        );
+
+        console.log("Staff dashboard company logo:", logo);
+        console.log("Staff dashboard website settings:", websiteSettings);
+
+    } catch (error) {
+        console.error(
+            "Company load error:",
+            error
+        );
+    }
+}, [
+    activeCompanySlug,
+    storedCompanyId,
+    storedCompanyName,
+    storedCompanyLogo,
+]);
 
     // ============================================================
     // FETCH DASHBOARD
@@ -609,10 +644,13 @@ function StaffDashboard() {
                         backendCompany.slug ||
                         activeCompanySlug,
 
-                    logo:
-                        backendCompany.logo ||
-                        storedCompanyLogo ||
-                        null,
+                  logo:
+    backendCompany.logo_url ||
+    backendCompany.logo ||
+    getStoredObject("company").logo_url ||
+    getStoredObject("company").logo ||
+    storedCompanyLogo ||
+    null,
                 };
 
                 setCompany(updatedCompany);
@@ -973,44 +1011,56 @@ function StaffDashboard() {
         <div className="min-h-screen bg-slate-50">
             <main className="max-w-7xl mx-auto px-5 md:px-8 py-8">
 
-                {/* COMPANY */}
+               {/* COMPANY */}
 
                 <section className="bg-slate-900 text-white rounded-2xl p-6 mb-8">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
 
                         <div className="flex items-start gap-4">
-                            <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
-                                <Building2 size={21} />
-                            </div>
 
-                            <div>
-                                <p className="text-xs uppercase tracking-wider font-semibold text-slate-400">
-                                    Active organization
-                                </p>
+                            {company.logo ? (
+                                <img
+                                   src={resolveMediaUrl(company.logo)}
+                                   alt={`${company.name} logo`}
+                                  onError={(event) => {
+                        event.currentTarget.style.display = "none";
+                    }}
+                    className="w-14 h-14 rounded-xl object-contain bg-white p-1 shrink-0"
+                />
+            ) : (
+                <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+                    <Building2 size={21} />
+                </div>
+            )}
 
-                                <h2 className="text-xl font-bold mt-1">
-                                    {company.name}
-                                </h2>
+            <div>
+                <p className="text-xs uppercase tracking-wider font-semibold text-slate-400">
+                    Active organization
+                </p>
 
-                                <p className="text-sm text-slate-400 mt-1">
-                                    Staff operations and
-                                    lost & found
-                                    management
-                                </p>
-                            </div>
-                        </div>
+                <h2 className="text-xl font-bold mt-1">
+                    {company.name}
+                </h2>
 
-                        <div className="md:text-right">
-                            <p className="text-xs uppercase tracking-wider font-semibold text-slate-500">
-                                Organization ID
-                            </p>
+                <p className="text-sm text-slate-400 mt-1">
+                    Staff operations and
+                    lost & found
+                    management
+                </p>
+            </div>
+        </div>
 
-                            <p className="font-mono text-sm text-blue-300 mt-1">
-                                {activeCompanySlug}
-                            </p>
-                        </div>
-                    </div>
-                </section>
+        <div className="md:text-right">
+            <p className="text-xs uppercase tracking-wider font-semibold text-slate-500">
+                Organization ID
+            </p>
+
+            <p className="font-mono text-sm text-blue-300 mt-1">
+                {activeCompanySlug}
+            </p>
+        </div>
+    </div>
+</section>
 
                 {/* OVERVIEW */}
 

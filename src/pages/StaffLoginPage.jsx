@@ -1,10 +1,24 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { ArrowRight, Hash, KeyRound, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
+import {
+  ArrowRight,
+  Hash,
+  KeyRound,
+  LockKeyhole,
+  Mail,
+  ShieldCheck,
+} from "lucide-react";
 
 import { API } from "../config";
-import { BRAND, resolveMediaUrl, withAlpha, upgradeLegacyColor } from "../theme";
+import {
+  BRAND,
+  resolveMediaUrl,
+  withAlpha,
+  upgradeLegacyColor,
+} from "../theme";
+
 import AuthLayout, {
   AuthAlert,
   AuthField,
@@ -20,36 +34,52 @@ const DEFAULT_THEME = {
 };
 
 function pickColor(value, fallback) {
-    value = upgradeLegacyColor(value);
-  return typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value.trim())
+  value = upgradeLegacyColor(value);
+
+  return typeof value === "string" &&
+    /^#[0-9a-fA-F]{6}$/.test(value.trim())
     ? value.trim()
     : fallback;
+}
+
+function getCompanyData(data) {
+  return (
+    data?.company ||
+    data?.data?.company ||
+    data?.data ||
+    data ||
+    {}
+  );
+}
+
+function getWebsiteSettings(data) {
+  return (
+    data?.settings ||
+    data?.website_settings ||
+    data?.data?.settings ||
+    data?.data?.website_settings ||
+    data?.data ||
+    data ||
+    {}
+  );
 }
 
 function StaffLoginPage() {
   const navigate = useNavigate();
   const params = useParams();
 
-  // Supports either:
-  // /company/:companySlug/staff-login
-  // OR
-  // /company/:slug/staff-login
   const slug = params.companySlug || params.slug;
 
-  console.log("STAFF LOGIN COMPANY SLUG:", slug);
-
-  // ============================================================
   // COMPANY
-  // ============================================================
-
   const [company, setCompany] = useState(null);
   const [companyLoading, setCompanyLoading] = useState(true);
   const [companyError, setCompanyError] = useState("");
 
-  // ============================================================
-  // LOGIN
-  // ============================================================
+  // WEBSITE SETTINGS
+  const [websiteSettings, setWebsiteSettings] = useState({});
+  const [theme, setTheme] = useState(DEFAULT_THEME);
 
+  // LOGIN
   const [loginForm, setLoginForm] = useState({
     email: "",
     password: "",
@@ -58,33 +88,23 @@ function StaffLoginPage() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginMessage, setLoginMessage] = useState("");
 
-  // ============================================================
   // FORGOT PASSWORD
-  // ============================================================
-
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotMessage, setForgotMessage] = useState("");
 
-  // ============================================================
   // RESET PASSWORD
-  // ============================================================
-
   const [resetForm, setResetForm] = useState({
     email: "",
     code: "",
     new_password: "",
     confirm_password: "",
-    
   });
 
   const [resetLoading, setResetLoading] = useState(false);
   const [resetMessage, setResetMessage] = useState("");
 
-  // ============================================================
   // CHANGE PASSWORD
-  // ============================================================
-
   const [changeForm, setChangeForm] = useState({
     old_password: "",
     new_password: "",
@@ -94,106 +114,139 @@ function StaffLoginPage() {
   const [changeLoading, setChangeLoading] = useState(false);
   const [changeMessage, setChangeMessage] = useState("");
 
-  // ============================================================
   // ACTIVE PANEL
-  // ============================================================
-
   const [activePanel, setActivePanel] = useState("login");
 
-  // ============================================================
-  // COMPANY THEME (optional: falls back to Orange & Graphite)
-  // ============================================================
-
-  const [theme, setTheme] = useState(DEFAULT_THEME);
-
+  // LOAD COMPANY AND WEBSITE SETTINGS
   useEffect(() => {
-    if (!slug) return undefined;
-
     let cancelled = false;
 
-    fetch(`${API}/company/public/${encodeURIComponent(slug)}/website/`)
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data) => {
-        const source = data?.settings || data?.website_settings;
-        if (!source || cancelled) return;
+    async function loadCompany() {
+      setCompanyLoading(true);
+      setCompanyError("");
 
-        setTheme({
-          primary_color: pickColor(source.primary_color, DEFAULT_THEME.primary_color),
-          secondary_color: pickColor(source.secondary_color, DEFAULT_THEME.secondary_color),
-          background_color: pickColor(source.background_color, DEFAULT_THEME.background_color),
-        });
-      })
-      .catch(() => {});
+      if (!slug) {
+        setCompanyError("Company platform was not specified.");
+        setCompanyLoading(false);
+        return;
+      }
+
+      try {
+        const encodedSlug = encodeURIComponent(slug);
+
+        // LOAD PUBLIC COMPANY PROFILE
+        const companyResponse = await fetch(
+          `${API}/company/public/${encodedSlug}/`
+        );
+
+        const companyData = await companyResponse.json();
+
+        if (!companyResponse.ok) {
+          throw new Error(
+            companyData?.error ||
+              companyData?.detail ||
+              "Company platform not found."
+          );
+        }
+
+        const loadedCompany = getCompanyData(companyData);
+
+        if (
+          !loadedCompany ||
+          (!loadedCompany.name && !loadedCompany.slug)
+        ) {
+          throw new Error("Company information could not be loaded.");
+        }
+
+        if (cancelled) return;
+
+        setCompany(loadedCompany);
+
+        // PRESERVE COMPANY PROFILE
+        localStorage.setItem(
+          "company",
+          JSON.stringify(loadedCompany)
+        );
+
+        // GET EMBEDDED WEBSITE SETTINGS IF AVAILABLE
+        const embeddedSettings =
+          companyData?.settings ||
+          companyData?.website_settings ||
+          companyData?.data?.settings ||
+          companyData?.data?.website_settings;
+
+        if (embeddedSettings) {
+          setWebsiteSettings(embeddedSettings);
+        }
+
+        // LOAD PUBLISHED WEBSITE SETTINGS
+        try {
+          const settingsResponse = await fetch(
+            `${API}/company/public/${encodedSlug}/website/`
+          );
+
+          const settingsData = await settingsResponse.json();
+
+          if (settingsResponse.ok && !cancelled) {
+            const loadedSettings = getWebsiteSettings(settingsData);
+
+            setWebsiteSettings(loadedSettings);
+
+            setTheme({
+              primary_color: pickColor(
+                loadedSettings.primary_color,
+                DEFAULT_THEME.primary_color
+              ),
+
+              secondary_color: pickColor(
+                loadedSettings.secondary_color,
+                DEFAULT_THEME.secondary_color
+              ),
+
+              background_color: pickColor(
+                loadedSettings.background_color,
+                DEFAULT_THEME.background_color
+              ),
+            });
+          } else if (
+            !settingsResponse.ok &&
+            settingsResponse.status !== 404
+          ) {
+            console.warn(
+              "Website settings could not be loaded:",
+              settingsData
+            );
+          }
+        } catch (settingsError) {
+          console.warn(
+            "Website settings request failed:",
+            settingsError
+          );
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error("COMPANY LOAD ERROR:", error);
+
+          setCompanyError(
+            error.message ||
+              "Unable to load company information."
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setCompanyLoading(false);
+        }
+      }
+    }
+
+    loadCompany();
 
     return () => {
       cancelled = true;
     };
   }, [slug]);
 
-  // ============================================================
-  // LOAD COMPANY
-  // ============================================================
-
-  useEffect(() => {
-    const loadCompany = async () => {
-      console.log("LOADING COMPANY:", slug);
-
-      if (!slug) {
-        setCompanyError(
-          "Company platform was not specified."
-        );
-        setCompanyLoading(false);
-        return;
-      }
-
-      try {
-        const response = await fetch(
-          `${API}/company/public/${encodeURIComponent(slug)}/`
-        );
-
-        const data = await response.json();
-
-        console.log("PUBLIC COMPANY RESPONSE:", data);
-
-        if (!response.ok) {
-          throw new Error(
-            data.error ||
-              data.detail ||
-              "Company platform not found."
-          );
-        }
-
-        const companyData =
-          data.company || data;
-
-        setCompany(companyData);
-
-        localStorage.setItem(
-          "company",
-          JSON.stringify(companyData)
-        );
-      } catch (error) {
-        console.error(
-          "COMPANY LOAD ERROR:",
-          error
-        );
-
-        setCompanyError(
-          error.message ||
-            "Unable to load company information."
-        );
-      } finally {
-        setCompanyLoading(false);
-      }
-    };
-
-    loadCompany();
-  }, [slug]);
-
-  // ============================================================
-  // FORM CHANGE
-  // ============================================================
-
+  // HANDLE LOGIN FORM
   const handleLoginChange = (e) => {
     setLoginForm((previous) => ({
       ...previous,
@@ -201,17 +254,12 @@ function StaffLoginPage() {
     }));
   };
 
-  // ============================================================
   // STAFF LOGIN
-  // ============================================================
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!slug) {
-      setLoginMessage(
-        "Company platform was not specified."
-      );
+      setLoginMessage("Company platform was not specified.");
       return;
     }
 
@@ -219,33 +267,19 @@ function StaffLoginPage() {
     setLoginMessage("");
 
     try {
-      const response = await fetch(
-        `${API}/staff/login/`,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type": "application/json",
-          },
-
-          body: JSON.stringify({
-            email: loginForm.email
-              .trim()
-              .toLowerCase(),
-
-            password: loginForm.password,
-
-            company_slug: slug,
-          }),
-        }
-      );
+      const response = await fetch(`${API}/staff/login/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: loginForm.email.trim().toLowerCase(),
+          password: loginForm.password,
+          company_slug: slug,
+        }),
+      });
 
       const data = await response.json();
-
-      console.log(
-        "STAFF LOGIN RESPONSE:",
-        data
-      );
 
       if (!response.ok) {
         throw new Error(
@@ -255,34 +289,13 @@ function StaffLoginPage() {
         );
       }
 
-      // ========================================================
       // TOKENS
-      // ========================================================
+      localStorage.setItem("access", data.access);
+      localStorage.setItem("refresh", data.refresh);
+      localStorage.setItem("access_token", data.access);
+      localStorage.setItem("refresh_token", data.refresh);
 
-      localStorage.setItem(
-        "access",
-        data.access
-      );
-
-      localStorage.setItem(
-        "refresh",
-        data.refresh
-      );
-
-      localStorage.setItem(
-        "access_token",
-        data.access
-      );
-
-      localStorage.setItem(
-        "refresh_token",
-        data.refresh
-      );
-
-      // ========================================================
       // STAFF
-      // ========================================================
-
       const staffData = {
         id: data.user?.id,
         username: data.user?.username,
@@ -296,26 +309,20 @@ function StaffLoginPage() {
         JSON.stringify(staffData)
       );
 
-      // ========================================================
       // COMPANY
-      // ========================================================
-
       const companyData = {
-        id:
-          data.company?.id ||
-          company?.id,
-
-        name:
-          data.company?.name ||
-          company?.name,
-
-        slug:
-          data.company?.slug ||
-          slug,
-
+        ...(company || {}),
+        ...(data.company || {}),
+        id: data.company?.id || company?.id,
+        name: data.company?.name || company?.name,
+        slug: data.company?.slug || slug,
         logo:
           data.company?.logo ||
           company?.logo ||
+          null,
+        logo_url:
+          data.company?.logo_url ||
+          company?.logo_url ||
           null,
       };
 
@@ -324,39 +331,23 @@ function StaffLoginPage() {
         JSON.stringify(companyData)
       );
 
-      // ========================================================
-      // GO TO COMPANY STAFF DASHBOARD
-      // ========================================================
-
       navigate(
-        `/company/${slug}/staff-dashboard`
+        `/company/${encodeURIComponent(slug)}/staff-dashboard`
       );
-
     } catch (error) {
-      console.error(
-        "STAFF LOGIN ERROR:",
-        error
-      );
-
-      setLoginMessage(
-        error.message
-      );
+      console.error("STAFF LOGIN ERROR:", error);
+      setLoginMessage(error.message || "Login failed.");
     } finally {
       setLoginLoading(false);
     }
   };
 
-  // ============================================================
   // FORGOT PASSWORD
-  // ============================================================
-
   const handleForgotPassword = async (e) => {
     e.preventDefault();
 
     if (!slug) {
-      setForgotMessage(
-        "Company platform was not specified."
-      );
+      setForgotMessage("Company platform was not specified.");
       return;
     }
 
@@ -364,20 +355,15 @@ function StaffLoginPage() {
     setForgotMessage("");
 
     try {
-      const email =
-        forgotEmail
-          .trim()
-          .toLowerCase();
+      const email = forgotEmail.trim().toLowerCase();
 
       const response = await fetch(
         `${API}/staff/forgot-password/`,
         {
           method: "POST",
-
           headers: {
             "Content-Type": "application/json",
           },
-
           body: JSON.stringify({
             email,
             company_slug: slug,
@@ -386,11 +372,6 @@ function StaffLoginPage() {
       );
 
       const data = await response.json();
-
-      console.log(
-        "STAFF FORGOT PASSWORD:",
-        data
-      );
 
       if (!response.ok) {
         throw new Error(
@@ -416,25 +397,14 @@ function StaffLoginPage() {
         setForgotMessage("");
         setActivePanel("reset");
       }, 1000);
-
     } catch (error) {
-      console.error(
-        "FORGOT PASSWORD ERROR:",
-        error
-      );
-
-      setForgotMessage(
-        error.message
-      );
+      setForgotMessage(error.message);
     } finally {
       setForgotLoading(false);
     }
   };
 
-  // ============================================================
   // RESET FORM CHANGE
-  // ============================================================
-
   const handleResetChange = (e) => {
     setResetForm((previous) => ({
       ...previous,
@@ -442,10 +412,7 @@ function StaffLoginPage() {
     }));
   };
 
-  // ============================================================
-  // RESET STAFF PASSWORD
-  // ============================================================
-
+  // RESET PASSWORD
   const handleResetPassword = async (e) => {
     e.preventDefault();
 
@@ -453,24 +420,17 @@ function StaffLoginPage() {
     setResetMessage("");
 
     if (
-      resetForm.new_password !==
-      resetForm.confirm_password
+      resetForm.new_password !== resetForm.confirm_password
     ) {
-      setResetMessage(
-        "Passwords do not match."
-      );
-
+      setResetMessage("Passwords do not match.");
       setResetLoading(false);
       return;
     }
 
-    if (
-      resetForm.new_password.length < 8
-    ) {
+    if (resetForm.new_password.length < 8) {
       setResetMessage(
         "Password must contain at least 8 characters."
       );
-
       setResetLoading(false);
       return;
     }
@@ -480,26 +440,20 @@ function StaffLoginPage() {
         `${API}/staff/reset-password/`,
         {
           method: "POST",
-
           headers: {
             "Content-Type": "application/json",
           },
-
           body: JSON.stringify({
             email: resetForm.email.trim().toLowerCase(),
-            company_slug: slug, 
+            company_slug: slug,
             code: resetForm.code.trim(),
             new_password: resetForm.new_password,
             confirm_password: resetForm.confirm_password,
-          })
+          }),
         }
       );
-      const data = await response.json();
 
-      console.log(
-        "STAFF RESET RESPONSE:",
-        data
-      );
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(
@@ -510,8 +464,7 @@ function StaffLoginPage() {
       }
 
       setResetMessage(
-        data.message ||
-          "Password reset successfully."
+        data.message || "Password reset successfully."
       );
 
       setTimeout(() => {
@@ -530,25 +483,14 @@ function StaffLoginPage() {
         setResetMessage("");
         setActivePanel("login");
       }, 1500);
-
     } catch (error) {
-      console.error(
-        "STAFF RESET ERROR:",
-        error
-      );
-
-      setResetMessage(
-        error.message
-      );
+      setResetMessage(error.message);
     } finally {
       setResetLoading(false);
     }
   };
 
-  // ============================================================
-  // CHANGE PASSWORD
-  // ============================================================
-
+  // CHANGE PASSWORD FORM
   const handleChangePasswordChange = (e) => {
     setChangeForm((previous) => ({
       ...previous,
@@ -556,6 +498,7 @@ function StaffLoginPage() {
     }));
   };
 
+  // CHANGE PASSWORD
   const handleChangePassword = async (e) => {
     e.preventDefault();
 
@@ -563,39 +506,29 @@ function StaffLoginPage() {
     setChangeMessage("");
 
     if (
-      changeForm.new_password !==
-      changeForm.confirm_password
+      changeForm.new_password !== changeForm.confirm_password
     ) {
-      setChangeMessage(
-        "New passwords do not match."
-      );
-
+      setChangeMessage("New passwords do not match.");
       setChangeLoading(false);
       return;
     }
 
-    if (
-      changeForm.new_password.length < 8
-    ) {
+    if (changeForm.new_password.length < 8) {
       setChangeMessage(
         "Password must contain at least 8 characters."
       );
-
       setChangeLoading(false);
       return;
     }
 
     const token =
-      localStorage.getItem(
-        "access_token"
-      ) ||
+      localStorage.getItem("access_token") ||
       localStorage.getItem("access");
 
     if (!token) {
       setChangeMessage(
         "Please login first before changing your password."
       );
-
       setChangeLoading(false);
       return;
     }
@@ -605,50 +538,26 @@ function StaffLoginPage() {
         `${API}/staff/change-password/`,
         {
           method: "POST",
-
           headers: {
-            "Content-Type":
-              "application/json",
-
-            Authorization:
-              `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
-
           body: JSON.stringify({
-            old_password:
-              changeForm.old_password,
-
-            new_password:
-              changeForm.new_password,
+            old_password: changeForm.old_password,
+            new_password: changeForm.new_password,
           }),
         }
       );
 
       const data = await response.json();
 
-      console.log(
-        "STAFF CHANGE PASSWORD:",
-        data
-      );
-
-      if (
-        response.status === 401
-      ) {
-        localStorage.removeItem(
-          "access"
-        );
-
-        localStorage.removeItem(
-          "access_token"
-        );
-
-        localStorage.removeItem(
-          "refresh"
-        );
-
-        localStorage.removeItem(
-          "refresh_token"
-        );
+      if (response.status === 401) {
+        [
+          "access",
+          "access_token",
+          "refresh",
+          "refresh_token",
+        ].forEach((key) => localStorage.removeItem(key));
 
         setChangeMessage(
           "Your session has expired. Please login again."
@@ -670,8 +579,7 @@ function StaffLoginPage() {
       }
 
       setChangeMessage(
-        data.message ||
-          "Password changed successfully."
+        data.message || "Password changed successfully."
       );
 
       setChangeForm({
@@ -679,46 +587,42 @@ function StaffLoginPage() {
         new_password: "",
         confirm_password: "",
       });
-
     } catch (error) {
-      console.error(
-        "CHANGE PASSWORD ERROR:",
-        error
-      );
-
-      setChangeMessage(
-        error.message
-      );
+      setChangeMessage(error.message);
     } finally {
       setChangeLoading(false);
     }
   };
 
-  // ============================================================
-  // THEME + MESSAGE TONE
-  // ============================================================
-
-  const primary = theme.primary_color;
-
-  // Messages share one state per panel; pick green for success.
+  // MESSAGE TONE
   const toneOf = (message) =>
     /success|sent|changed|reset\b|verified/i.test(message || "") &&
     !/unable|invalid|expired|error|failed|not /i.test(message || "")
       ? "success"
       : "error";
 
+  const primary = theme.primary_color;
+  const companyName = company?.name || "Company";
+
+  // SAME LOGO RESOLUTION FORMAT AS CUSTOMER LOGIN
+  const logoSource =
+    websiteSettings.logo_url ||
+    websiteSettings.logo ||
+    company?.logo_url ||
+    company?.logo ||
+    "";
+
+  const logoUrl = resolveMediaUrl(logoSource);
+
   const linkButton =
     "w-full rounded-xl px-4 py-3 text-sm font-semibold text-stone-600 transition hover:bg-stone-50 hover:text-graphite";
 
-  // ============================================================
   // LOGIN PANEL
-  // ============================================================
-
   const renderLogin = () => (
     <>
       <AuthHeading
         title="Staff sign in"
-        subtitle={`Access the ${company?.name || "company"} staff portal`}
+        subtitle={`Access the ${companyName} staff portal`}
       />
 
       <AuthAlert>{loginMessage}</AuthAlert>
@@ -789,10 +693,7 @@ function StaffLoginPage() {
     </>
   );
 
-  // ============================================================
   // FORGOT PASSWORD PANEL
-  // ============================================================
-
   const renderForgot = () => (
     <>
       <AuthHeading
@@ -800,7 +701,9 @@ function StaffLoginPage() {
         subtitle="Enter your staff email and we'll send you a 6-digit code."
       />
 
-      <AuthAlert tone={toneOf(forgotMessage)}>{forgotMessage}</AuthAlert>
+      <AuthAlert tone={toneOf(forgotMessage)}>
+        {forgotMessage}
+      </AuthAlert>
 
       <form onSubmit={handleForgotPassword} className="space-y-4">
         <AuthField
@@ -846,10 +749,7 @@ function StaffLoginPage() {
     </>
   );
 
-  // ============================================================
   // RESET PASSWORD PANEL
-  // ============================================================
-
   const renderReset = () => (
     <>
       <AuthHeading
@@ -857,7 +757,9 @@ function StaffLoginPage() {
         subtitle="Enter the 6-digit code from your email and choose a new password."
       />
 
-      <AuthAlert tone={toneOf(resetMessage)}>{resetMessage}</AuthAlert>
+      <AuthAlert tone={toneOf(resetMessage)}>
+        {resetMessage}
+      </AuthAlert>
 
       <form onSubmit={handleResetPassword} className="space-y-4">
         <AuthField
@@ -933,10 +835,7 @@ function StaffLoginPage() {
     </>
   );
 
-  // ============================================================
   // CHANGE PASSWORD PANEL
-  // ============================================================
-
   const renderChangePassword = () => (
     <>
       <AuthHeading
@@ -944,7 +843,9 @@ function StaffLoginPage() {
         subtitle="Update the password for your staff account."
       />
 
-      <AuthAlert tone={toneOf(changeMessage)}>{changeMessage}</AuthAlert>
+      <AuthAlert tone={toneOf(changeMessage)}>
+        {changeMessage}
+      </AuthAlert>
 
       <form onSubmit={handleChangePassword} className="space-y-4">
         <AuthField
@@ -1006,10 +907,7 @@ function StaffLoginPage() {
     </>
   );
 
-  // ============================================================
-  // LOADING / ERROR
-  // ============================================================
-
+  // LOADING
   if (companyLoading) {
     return (
       <AuthMessage
@@ -1021,11 +919,12 @@ function StaffLoginPage() {
     );
   }
 
-  if (companyError) {
+  // ERROR
+  if (companyError || !company) {
     return (
       <AuthMessage
         title="Company not found"
-        message={companyError}
+        message={companyError || "Company information is unavailable."}
         actionTo="/"
         actionLabel="Back to TrustFound"
         primary={primary}
@@ -1034,16 +933,11 @@ function StaffLoginPage() {
     );
   }
 
-  // ============================================================
   // PAGE
-  // ============================================================
-
-  const companyName = company?.name || "Company";
-
   return (
     <AuthLayout
       companyName={companyName}
-      logoUrl={resolveMediaUrl(company?.logo || company?.logo_url)}
+      logoUrl={logoUrl}
       primary={primary}
       secondary={theme.secondary_color}
       background={theme.background_color}

@@ -1,5 +1,7 @@
+
 import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+
 import {
     ArrowLeft,
     Package,
@@ -13,9 +15,11 @@ import {
     CheckCircle,
     AlertCircle,
     Loader2,
+    QrCode,
 } from "lucide-react";
 
 import { API } from "../config";
+
 // =========================================================
 // GET STORED OBJECT
 // =========================================================
@@ -77,9 +81,6 @@ function FoundItemDetails() {
 
     const websiteSettings = getWebsiteSettings(storedCompany);
 
-    // border_line_color controls the actual border line.
-    // border_color controls the fill/inside of bordered elements.
-
     const borderLineColor =
         websiteSettings.border_line_color ||
         websiteSettings.borderLineColor ||
@@ -102,10 +103,10 @@ function FoundItemDetails() {
     };
 
     // =========================================================
-    // TOKEN
+    // AUTHENTICATION
     // =========================================================
 
-    const access =
+    const getAccessToken = () =>
         localStorage.getItem("access_token") ||
         localStorage.getItem("access");
 
@@ -145,20 +146,25 @@ function FoundItemDetails() {
     // =========================================================
 
     useEffect(() => {
-        if (!access) {
+        if (!getAccessToken()) {
             navigate(
-                companyRoute("/login-page"),
+                companyRoute("/staff-login"),
                 { replace: true }
             );
         }
-    }, [access, navigate, companyRoute]);
+    }, [navigate, companyRoute]);
 
     // =========================================================
-    // FETCH FOUND ITEM
+    // FETCH STAFF FOUND ITEM
+    // IMPORTANT: USE THE STAFF DETAIL ENDPOINT
     // =========================================================
 
     useEffect(() => {
+        let mounted = true;
+
         const fetchItem = async () => {
+            const access = getAccessToken();
+
             if (!access || !id) {
                 setLoading(false);
                 return;
@@ -169,15 +175,15 @@ function FoundItemDetails() {
                 setError("");
 
                 const response = await fetch(
-                    `${API}/found-items/${id}/`,
+                    `${API}/staff/found-item/${id}/`,
                     {
+                        method: "GET",
                         headers: {
                             Authorization: `Bearer ${access}`,
+                            "Content-Type": "application/json",
                         },
                     }
                 );
-
-                // AUTH ERROR
 
                 if (
                     response.status === 401 ||
@@ -186,24 +192,44 @@ function FoundItemDetails() {
                     localStorage.removeItem("access");
                     localStorage.removeItem("access_token");
 
+                    localStorage.removeItem("refresh");
+                    localStorage.removeItem("refresh_token");
+
                     navigate(
-                        companyRoute("/login-page"),
+                        companyRoute("/staff-login"),
                         { replace: true }
                     );
 
                     return;
                 }
 
+                const contentType =
+                    response.headers.get("content-type");
+
+                if (
+                    !contentType ||
+                    !contentType.includes("application/json")
+                ) {
+                    throw new Error(
+                        "The server returned an unexpected response. Check the staff found-item API endpoint."
+                    );
+                }
+
                 const data = await response.json();
 
                 console.log(
-                    "FOUND ITEM DETAIL STATUS:",
+                    "STAFF FOUND ITEM STATUS:",
                     response.status
                 );
 
                 console.log(
-                    "FOUND ITEM DETAIL RESPONSE:",
+                    "STAFF FOUND ITEM:",
                     data
+                );
+
+                console.log(
+                    "VERIFICATION TOKEN:",
+                    data.verification_token
                 );
 
                 if (!response.ok) {
@@ -215,24 +241,81 @@ function FoundItemDetails() {
                     );
                 }
 
-                setItem(data);
+                if (mounted) {
+                    setItem(data);
+                }
+
             } catch (err) {
                 console.error(
-                    "FOUND ITEM DETAIL ERROR:",
+                    "STAFF FOUND ITEM ERROR:",
                     err
                 );
 
-                setError(
-                    err.message ||
-                    "Unable to load found item."
-                );
+                if (mounted) {
+                    setError(
+                        err.message ||
+                        "Unable to load found item."
+                    );
+                }
+
             } finally {
-                setLoading(false);
+                if (mounted) {
+                    setLoading(false);
+                }
             }
         };
 
         fetchItem();
-    }, [id, access, navigate, companyRoute]);
+
+        return () => {
+            mounted = false;
+        };
+    }, [id, navigate, companyRoute]);
+
+    // =========================================================
+    // BACK TO PENDING VERIFICATION
+    // =========================================================
+
+    const handleBack = () => {
+        navigate(
+            companyRoute("/staff/pending")
+        );
+    };
+
+    // =========================================================
+    // VERIFY ITEM
+    // =========================================================
+
+    const handleVerifyItem = () => {
+        const verificationToken =
+            item?.verification_token ||
+            item?.verificationToken ||
+            "";
+
+        if (!verificationToken) {
+            console.error(
+                "VERIFICATION TOKEN MISSING:",
+                item
+            );
+
+            setError(
+                "The verification code was not returned by the staff API. Please check the backend staff_found_item_detail response."
+            );
+
+            return;
+        }
+
+        navigate(
+            companyRoute("/staff/scan"),
+            {
+                state: {
+                    itemId: item.id,
+                    itemName: item.item_name,
+                    verificationToken,
+                },
+            }
+        );
+    };
 
     // =========================================================
     // LOADING
@@ -278,7 +361,9 @@ function FoundItemDetails() {
                     </div>
 
                     <h1 className="text-2xl font-black text-gray-900 dark:text-white mt-5">
-                        Found item not found
+                        {item
+                            ? "Verification information error"
+                            : "Found item not found"}
                     </h1>
 
                     <p className="text-gray-500 dark:text-gray-400 mt-3">
@@ -288,14 +373,10 @@ function FoundItemDetails() {
 
                     <button
                         type="button"
-                        onClick={() =>
-                            navigate(
-                                companyRoute("/dashboard")
-                            )
-                        }
+                        onClick={handleBack}
                         className="mt-7 bg-blue-600 hover:bg-blue-700 text-white px-7 py-3 rounded-xl font-bold transition"
                     >
-                        Back to Dashboard
+                        Back to Pending Verification
                     </button>
                 </div>
             </div>
@@ -314,6 +395,11 @@ function FoundItemDetails() {
     const isMatched = status === "matched";
     const isRecovered = status === "recovered";
 
+    const verificationToken =
+        item.verification_token ||
+        item.verificationToken ||
+        "";
+
     // =========================================================
     // IMAGE
     // =========================================================
@@ -321,16 +407,12 @@ function FoundItemDetails() {
     const imageUrl = item.image
         ? item.image.startsWith("http")
             ? item.image
-            : `${API}${item.image}`
+            : `${API.replace(/\/api\/?$/, "")}${
+                item.image.startsWith("/")
+                    ? item.image
+                    : `/${item.image}`
+            }`
         : null;
-
-    // =========================================================
-    // BACK
-    // =========================================================
-
-    const handleBack = () => {
-        navigate(companyRoute("/dashboard"));
-    };
 
     // =========================================================
     // PAGE
@@ -348,7 +430,7 @@ function FoundItemDetails() {
                     className="mb-7 flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold hover:underline"
                 >
                     <ArrowLeft size={20} />
-                    Back to Dashboard
+                    Back to Pending Verification
                 </button>
 
                 {/* MAIN CARD */}
@@ -422,7 +504,11 @@ function FoundItemDetails() {
                                         item.item_name ||
                                         "Found item"
                                     } image`}
-                                    className="w-full max-h-[520px] item-image zoomable rounded-2xl shadow-lg"
+                                    className="w-full max-h-[520px] object-contain rounded-2xl shadow-lg"
+                                    onError={(event) => {
+                                        event.currentTarget.style.display =
+                                            "none";
+                                    }}
                                 />
                             ) : (
                                 <div className="text-center">
@@ -563,6 +649,58 @@ function FoundItemDetails() {
                         </div>
                     </div>
 
+                    {/* VERIFICATION ACTION */}
+
+                    {!isVerified &&
+                        !isMatched &&
+                        !isRecovered && (
+                            <div className="mx-6 md:mx-8 mb-8">
+                                <div
+                                    className="rounded-3xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 p-6"
+                                    style={borderFillStyle}
+                                >
+                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
+                                        <div className="flex gap-4">
+                                            <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center shrink-0">
+                                                <QrCode
+                                                    size={25}
+                                                    className="text-blue-600"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <h2 className="text-xl font-black text-blue-800 dark:text-blue-300">
+                                                    Staff Verification
+                                                </h2>
+
+                                                <p className="text-blue-700 dark:text-blue-400 mt-2">
+                                                    Verify this found item using its verification code.
+                                                </p>
+
+                                                {!verificationToken && (
+                                                    <p className="text-red-600 text-sm font-semibold mt-3">
+                                                        Verification token was not returned by the staff API.
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={handleVerifyItem}
+                                            disabled={!verificationToken}
+                                            className="shrink-0 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-7 py-4 rounded-xl font-black transition"
+                                        >
+                                            <span className="flex items-center justify-center gap-2">
+                                                <QrCode size={19} />
+                                                Verify Item
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                     {/* VERIFIED NOTICE */}
 
                     {isVerified && (
@@ -622,20 +760,6 @@ function FoundItemDetails() {
                                             matched with a customer's
                                             lost-item report.
                                         </p>
-
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                navigate(
-                                                    companyRoute(
-                                                        "/dashboard"
-                                                    )
-                                                )
-                                            }
-                                            className="mt-5 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-black transition"
-                                        >
-                                            View Dashboard →
-                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -731,19 +855,19 @@ function FoundItemDetails() {
                                 className="flex-1 flex items-center justify-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-7 py-4 rounded-xl font-black transition"
                             >
                                 <ArrowLeft size={20} />
-                                Back
+                                Back to Pending
                             </button>
 
                             <button
                                 type="button"
                                 onClick={() =>
                                     navigate(
-                                        companyRoute("/dashboard")
+                                        companyRoute("/staff/pending")
                                     )
                                 }
                                 className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-7 py-4 rounded-xl font-black transition"
                             >
-                                Dashboard
+                                Pending Verification
                             </button>
                         </div>
                     </div>

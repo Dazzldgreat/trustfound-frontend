@@ -1,8 +1,11 @@
+
 import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import QRCode from "react-qr-code";
 
 import { API } from "../../config";
 import { upgradeLegacyColor } from "../../theme";
+
 const DEFAULT_WEBSITE_SETTINGS = {
   primary_color: "#EA580C",
   secondary_color: "#C2410C",
@@ -61,7 +64,7 @@ function isValidColor(value) {
 }
 
 function getValidColor(value, fallback) {
-    value = upgradeLegacyColor(value);
+  value = upgradeLegacyColor(value);
   return isValidColor(value) ? value : fallback;
 }
 
@@ -182,10 +185,6 @@ function FoundItem() {
     storedUser?.organizationSlug ||
     "";
 
-  // =========================================================
-  // COMPANY ROUTE
-  // =========================================================
-
   const companyRoute = useCallback(
     (path = "") => {
       const cleanPath = path
@@ -205,9 +204,7 @@ function FoundItem() {
     [activeCompanySlug]
   );
 
-  // =========================================================
   // WEBSITE SETTINGS
-  // =========================================================
 
   const [websiteSettings, setWebsiteSettings] = useState(
     DEFAULT_WEBSITE_SETTINGS
@@ -234,10 +231,7 @@ function FoundItem() {
           setWebsiteSettings(applyWebsiteTheme(result));
         }
       } catch (error) {
-        console.error(
-          "WEBSITE SETTINGS ERROR:",
-          error
-        );
+        console.error("WEBSITE SETTINGS ERROR:", error);
       }
     };
 
@@ -268,9 +262,7 @@ function FoundItem() {
     fontFamily: "var(--site-font)",
   };
 
-  // =========================================================
   // FORM STATE
-  // =========================================================
 
   const [formData, setFormData] = useState({
     item_name: "",
@@ -288,9 +280,11 @@ function FoundItem() {
   const [imagePreview, setImagePreview] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // =========================================================
+  // STORED SUBMITTED ITEM
+
+  const [submittedItem, setSubmittedItem] = useState(null);
+
   // IMAGE PREVIEW CLEANUP
-  // =========================================================
 
   useEffect(() => {
     return () => {
@@ -300,9 +294,7 @@ function FoundItem() {
     };
   }, [imagePreview]);
 
-  // =========================================================
   // HANDLE INPUT
-  // =========================================================
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -313,31 +305,50 @@ function FoundItem() {
     }));
   };
 
-  // =========================================================
   // HANDLE IMAGE UPLOAD
-  // =========================================================
 
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
 
     if (!file) return;
 
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
     setImage(file);
     setImagePreview(URL.createObjectURL(file));
   };
 
-  // =========================================================
-  // SUBMIT
-  // =========================================================
+  // COPY VERIFICATION CODE
+
+  const handleCopyCode = async () => {
+    const token = submittedItem?.verification_token;
+
+    if (!token) return;
+
+    try {
+      await navigator.clipboard.writeText(token);
+      alert("Verification code copied successfully.");
+    } catch {
+      alert("Unable to copy. Please copy the code manually.");
+    }
+  };
+
+  // PRINT QR CODE
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  // SUBMIT FOUND ITEM
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!access) {
       alert("Your session has expired. Please login again.");
-
       navigate(companyRoute("/login-page"));
-
       return;
     }
 
@@ -360,16 +371,6 @@ function FoundItem() {
     }
 
     try {
-      console.log("Submitting Found Item...");
-
-      for (const [key, value] of data.entries()) {
-        console.log(
-          "FORM DATA:",
-          key,
-          value instanceof File ? value.name : value
-        );
-      }
-
       const response = await fetch(`${API}/found-items/`, {
         method: "POST",
         headers: {
@@ -380,13 +381,7 @@ function FoundItem() {
 
       const result = await response.json();
 
-      console.log("SERVER STATUS:", response.status);
-      console.log("SERVER RESPONSE:", result);
-
-      if (
-        response.status === 401 ||
-        response.status === 403
-      ) {
+      if (response.status === 401 || response.status === 403) {
         localStorage.removeItem("access");
         localStorage.removeItem("access_token");
 
@@ -402,10 +397,7 @@ function FoundItem() {
       if (!response.ok) {
         let errorMessage = "Unable to submit found item.";
 
-        if (
-          typeof result === "object" &&
-          result !== null
-        ) {
+        if (typeof result === "object" && result !== null) {
           errorMessage = Object.entries(result)
             .map(([field, errors]) => {
               const message = Array.isArray(errors)
@@ -422,24 +414,30 @@ function FoundItem() {
         }
 
         alert(errorMessage);
-
         return;
       }
 
-      alert("Found item reported successfully!");
+      // BACKEND RETURNS THE CREATED ITEM UNDER result.item
 
-      if (result?.id) {
-        navigate(
-          companyRoute(`/found-success/${result.id}`)
+      const createdItem = result?.item;
+
+      if (!createdItem?.verification_token) {
+        alert(
+          "Your item was submitted, but the verification code was not returned. Please contact support."
         );
-      } else {
-        navigate(companyRoute("/dashboard"));
+        return;
       }
+
+      // SHOW QR CODE AND MANUAL CODE IMMEDIATELY
+
+      setSubmittedItem(createdItem);
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
     } catch (error) {
-      console.error(
-        "FOUND ITEM SUBMISSION ERROR:",
-        error
-      );
+      console.error("FOUND ITEM SUBMISSION ERROR:", error);
 
       alert(
         "Unable to connect to the server. Please try again."
@@ -449,17 +447,13 @@ function FoundItem() {
     }
   };
 
-  // =========================================================
   // BACK
-  // =========================================================
 
   const handleBack = () => {
     navigate(companyRoute("/dashboard"));
   };
 
-  // =========================================================
   // PAGE
-  // =========================================================
 
   return (
     <main
@@ -522,21 +516,6 @@ function FoundItem() {
           color: var(--site-primary);
         }
 
-        .found-item-theme .site-primary-soft {
-          background-color: color-mix(
-            in srgb,
-            var(--site-primary) 12%,
-            var(--site-card)
-          );
-          color: var(--site-primary);
-        }
-
-        .found-item-theme .site-divider {
-          border-color: var(--site-border-line);
-          border-style: var(--site-border-style);
-          border-width: var(--site-border-width);
-        }
-
         .found-item-theme .site-upload {
           border-color: var(--site-border-line);
           border-style: dashed;
@@ -554,6 +533,31 @@ function FoundItem() {
           border-color: var(--site-primary);
           box-shadow: 0 0 0 2px var(--site-primary);
         }
+
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+
+          #found-item-qr,
+          #found-item-qr * {
+            visibility: visible;
+          }
+
+          #found-item-qr {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            background: white !important;
+            color: black !important;
+            box-shadow: none !important;
+          }
+
+          #found-item-qr button {
+            display: none !important;
+          }
+        }
       `}</style>
 
       <div
@@ -562,309 +566,477 @@ function FoundItem() {
           maxWidth: "var(--site-content-width)",
         }}
       >
-        {/* BACK BUTTON */}
+        {/* SUCCESS AND QR CODE DISPLAY */}
 
-        <button
-          type="button"
-          onClick={handleBack}
-          disabled={submitting}
-          className="flex items-center gap-2 site-muted hover:site-primary-text mb-8 transition disabled:opacity-50"
-        >
-          <span className="material-symbols-outlined">
-            arrow_back
-          </span>
+        {submittedItem ? (
+          <div className="space-y-8">
+            <section className="site-card shadow p-8 text-center">
+              <div className="w-20 h-20 rounded-full bg-green-100 text-green-600 flex items-center justify-center mx-auto mb-5 text-4xl font-bold">
+                ✓
+              </div>
 
-          <span className="font-semibold">Back</span>
-        </button>
+              <h1 className="text-3xl font-black mb-3 site-heading">
+                Found Item Reported Successfully!
+              </h1>
 
-        {/* PAGE TITLE */}
+              <p className="site-muted">
+                Your report has been saved. Your unique QR
+                code and manual verification code have been
+                generated.
+              </p>
 
-        <div className="mb-10">
-          <h1 className="text-4xl font-black mb-3 site-heading">
-            Report a Found Item
-          </h1>
+              <div className="inline-block mt-5 px-5 py-2 rounded-full bg-amber-100 text-amber-800 font-bold text-sm">
+                Awaiting Physical Verification
+              </div>
+            </section>
 
-          <p className="site-muted">
-            Thank you for helping someone recover
-            their belongings. Provide as much
-            information as possible so the item can
-            be matched with its owner.
-          </p>
+            <section className="site-card shadow p-8">
+              <h2 className="text-2xl font-bold mb-6 site-heading">
+                Report Details
+              </h2>
 
-          {activeCompanySlug && (
-            <p className="text-sm site-muted mt-3">
-              Company: {activeCompanySlug}
-            </p>
-          )}
-        </div>
-
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-8"
-        >
-          {/* IMAGE */}
-
-          <section className="site-card shadow p-8">
-            <h2 className="text-2xl font-bold mb-6 site-heading">
-              Upload Item Image
-            </h2>
-
-            <div className="flex flex-col items-center">
-              {imagePreview ? (
+              {submittedItem.image && (
                 <img
-                  src={imagePreview}
-                  alt="Found item preview"
-                  className="w-56 h-56 rounded-xl item-image zoomable border mb-5"
-                  style={{
-                    borderColor: "var(--site-border-line)",
-                    borderWidth: "var(--site-border-width)",
-                    borderStyle: "var(--site-border-style)",
-                    borderRadius: "var(--site-radius)",
-                  }}
+                  src={submittedItem.image}
+                  alt={submittedItem.item_name}
+                  className="w-full max-h-72 object-contain rounded-xl mb-6"
                 />
-              ) : (
-                <div
-                  className="w-56 h-56 site-upload flex flex-col justify-center items-center mb-5"
-                >
-                  <span
-                    className="material-symbols-outlined text-6xl"
-                    style={{
-                      color: "var(--site-primary)",
-                    }}
-                  >
-                    image
-                  </span>
+              )}
 
-                  <p className="site-muted mt-2">
-                    No Image Selected
+              <div className="grid sm:grid-cols-2 gap-5">
+                <div>
+                  <p className="text-sm site-muted">Item Name</p>
+                  <p className="font-bold site-heading">
+                    {submittedItem.item_name}
                   </p>
                 </div>
-              )}
 
-              <input
-                id="image"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleImageUpload}
-              />
+                <div>
+                  <p className="text-sm site-muted">Category</p>
+                  <p className="font-bold site-heading">
+                    {submittedItem.category}
+                  </p>
+                </div>
 
-              <label
-                htmlFor="image"
-                className="site-button px-6 py-3 cursor-pointer transition"
-              >
-                Upload Image
-              </label>
+                <div>
+                  <p className="text-sm site-muted">Location Found</p>
+                  <p className="font-bold site-heading">
+                    {submittedItem.location_found}
+                  </p>
+                </div>
 
-              {image && (
-                <p className="text-sm site-muted mt-3">
-                  Selected: {image.name}
+                <div>
+                  <p className="text-sm site-muted">Date Found</p>
+                  <p className="font-bold site-heading">
+                    {submittedItem.date_found}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-sm site-muted">Report ID</p>
+                  <p className="font-bold site-heading">
+                    #{submittedItem.id}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-sm site-muted">Status</p>
+                  <p className="font-bold text-amber-700">
+                    Pending Verification
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <section
+              id="found-item-qr"
+              className="site-card shadow p-8 text-center"
+            >
+              <h2 className="text-2xl font-black mb-3 site-heading">
+                Your Verification QR Code
+              </h2>
+
+              <p className="site-muted mb-7">
+                Keep this QR code safe. Present it to an
+                authorized staff member when bringing the
+                physical item for inspection.
+              </p>
+
+              <div className="inline-block bg-white p-5 rounded-2xl border border-stone-200">
+                <QRCode
+                  value={submittedItem.verification_token}
+                  size={240}
+                  level="H"
+                  title="Found Item Verification QR Code"
+                />
+              </div>
+
+              <p className="text-sm site-muted mt-5">
+                Staff can scan this code to retrieve your report.
+              </p>
+
+              <div className="mt-8 text-left">
+                <label className="block font-bold mb-2 site-heading">
+                  Manual Verification Code
+                </label>
+
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <input
+                    readOnly
+                    value={submittedItem.verification_token}
+                    className="site-field w-full min-w-0 p-3 font-mono text-sm"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={handleCopyCode}
+                    className="site-button px-6 py-3 font-semibold"
+                  >
+                    Copy Code
+                  </button>
+                </div>
+
+                <p className="text-xs site-muted mt-2">
+                  If the QR code cannot be scanned, give this
+                  code to staff instead.
                 </p>
-              )}
+              </div>
+
+              <button
+                type="button"
+                onClick={handlePrint}
+                className="site-button w-full mt-7 py-3 font-bold"
+              >
+                Print QR Code
+              </button>
+            </section>
+
+            <section className="rounded-2xl p-6 bg-orange-50 border border-orange-100">
+              <h2 className="font-bold text-orange-900 mb-3">
+                What happens next?
+              </h2>
+
+              <ol className="list-decimal pl-5 space-y-2 text-sm text-orange-900">
+                <li>Keep your QR code and manual verification code.</li>
+                <li>Take the physical found item to an authorized staff member.</li>
+                <li>Staff will scan your QR code or enter your manual code.</li>
+                <li>Staff will inspect the physical item against your report.</li>
+                <li>After inspection, staff can confirm the item as verified.</li>
+              </ol>
+            </section>
+
+            <div className="flex justify-center print:hidden">
+              <button
+                type="button"
+                onClick={handleBack}
+                className="site-button px-8 py-4 font-bold"
+              >
+                Return to Dashboard
+              </button>
             </div>
-          </section>
+          </div>
+        ) : (
+          <>
+            {/* BACK BUTTON */}
 
-          {/* ITEM INFORMATION */}
-
-          <section className="site-card shadow p-8">
-            <h2 className="text-2xl font-bold mb-6 site-heading">
-              Item Information
-            </h2>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <label className="block mb-2 font-semibold site-text">
-                  Item Name
-                </label>
-
-                <input
-                  required
-                  name="item_name"
-                  value={formData.item_name}
-                  onChange={handleChange}
-                  placeholder="e.g. Black iPhone 13"
-                  className="site-field site-focus w-full p-3"
-                />
-              </div>
-
-              <div>
-                <label className="block mb-2 font-semibold site-text">
-                  Category
-                </label>
-
-                <select
-                  required
-                  name="category"
-                  value={formData.category}
-                  onChange={handleChange}
-                  className="site-field site-focus w-full p-3"
-                >
-                  <option value="">Select Category</option>
-                  <option value="Electronics">Electronics</option>
-                  <option value="Documents">Documents</option>
-                  <option value="Clothing">Clothing</option>
-                  <option value="Bags">Bags</option>
-                  <option value="Jewelry">Jewelry</option>
-                  <option value="Keys">Keys</option>
-                  <option value="Money">Money</option>
-                  <option value="Pets">Pets</option>
-                  <option value="Others">Others</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <label className="block mb-2 font-semibold site-text">
-                Description
-              </label>
-
-              <textarea
-                required
-                rows={5}
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                placeholder="Describe the item in detail..."
-                className="site-field site-focus w-full p-3"
-              />
-            </div>
-          </section>
-
-          {/* FOUND DETAILS */}
-
-          <section className="site-card shadow p-8">
-            <h2 className="text-2xl font-bold mb-6 site-heading">
-              Found Details
-            </h2>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <label className="block mb-2 font-semibold site-text">
-                  Location Found
-                </label>
-
-                <input
-                  required
-                  name="location_found"
-                  value={formData.location_found}
-                  onChange={handleChange}
-                  placeholder="e.g. Hotel lobby"
-                  className="site-field site-focus w-full p-3"
-                />
-              </div>
-
-              <div>
-                <label className="block mb-2 font-semibold site-text">
-                  Date Found
-                </label>
-
-                <input
-                  required
-                  type="date"
-                  name="date_found"
-                  value={formData.date_found}
-                  onChange={handleChange}
-                  className="site-field site-focus w-full p-3"
-                />
-              </div>
-
-              <div>
-                <label className="block mb-2 font-semibold site-text">
-                  Time Found
-                </label>
-
-                <input
-                  required
-                  type="time"
-                  name="time_found"
-                  value={formData.time_found}
-                  onChange={handleChange}
-                  className="site-field site-focus w-full p-3"
-                />
-              </div>
-            </div>
-          </section>
-
-          {/* FINDER INFORMATION */}
-
-          <section className="site-card shadow p-8">
-            <h2 className="text-2xl font-bold mb-6 site-heading">
-              Finder Information
-            </h2>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <label className="block mb-2 font-semibold site-text">
-                  Your Name
-                </label>
-
-                <input
-                  required
-                  name="finder_name"
-                  value={formData.finder_name}
-                  onChange={handleChange}
-                  placeholder="Your Name"
-                  className="site-field site-focus w-full p-3"
-                />
-              </div>
-
-              <div>
-                <label className="block mb-2 font-semibold site-text">
-                  Phone Number
-                </label>
-
-                <input
-                  required
-                  type="tel"
-                  name="finder_phone"
-                  value={formData.finder_phone}
-                  onChange={handleChange}
-                  placeholder="Phone Number"
-                  className="site-field site-focus w-full p-3"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block mb-2 font-semibold site-text">
-                  Email Address
-                </label>
-
-                <input
-                  required
-                  type="email"
-                  name="finder_email"
-                  value={formData.finder_email}
-                  onChange={handleChange}
-                  placeholder="Email Address"
-                  className="site-field site-focus w-full p-3"
-                />
-              </div>
-            </div>
-          </section>
-
-          {/* ACTION BUTTONS */}
-
-          <div className="flex flex-col sm:flex-row justify-end gap-4">
             <button
               type="button"
               onClick={handleBack}
               disabled={submitting}
-              className="site-field px-6 py-3 font-semibold transition disabled:opacity-50"
+              className="flex items-center gap-2 site-muted hover:site-primary-text mb-8 transition disabled:opacity-50"
             >
-              Cancel
+              <span className="material-symbols-outlined">
+                arrow_back
+              </span>
+
+              <span className="font-semibold">Back</span>
             </button>
 
-            <button
-              type="submit"
-              disabled={submitting}
-              className="site-button px-8 py-3 font-semibold transition disabled:opacity-50"
-            >
-              {submitting
-                ? "Submitting..."
-                : "Report Found Item"}
-            </button>
-          </div>
-        </form>
+            {/* PAGE TITLE */}
+
+            <div className="mb-10">
+              <h1 className="text-4xl font-black mb-3 site-heading">
+                Report a Found Item
+              </h1>
+
+              <p className="site-muted">
+                Thank you for helping someone recover their
+                belongings. Provide as much information as
+                possible so the item can be matched with its
+                owner.
+              </p>
+
+              {activeCompanySlug && (
+                <p className="text-sm site-muted mt-3">
+                  Company: {activeCompanySlug}
+                </p>
+              )}
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {/* IMAGE */}
+
+              <section className="site-card shadow p-8">
+                <h2 className="text-2xl font-bold mb-6 site-heading">
+                  Upload Item Image
+                </h2>
+
+                <div className="flex flex-col items-center">
+                  {imagePreview ? (
+                    <img
+                      src={imagePreview}
+                      alt="Found item preview"
+                      className="w-56 h-56 rounded-xl item-image zoomable border mb-5"
+                      style={{
+                        borderColor: "var(--site-border-line)",
+                        borderWidth: "var(--site-border-width)",
+                        borderStyle: "var(--site-border-style)",
+                        borderRadius: "var(--site-radius)",
+                      }}
+                    />
+                  ) : (
+                    <div className="w-56 h-56 site-upload flex flex-col justify-center items-center mb-5">
+                      <span
+                        className="material-symbols-outlined text-6xl"
+                        style={{
+                          color: "var(--site-primary)",
+                        }}
+                      >
+                        image
+                      </span>
+
+                      <p className="site-muted mt-2">
+                        No Image Selected
+                      </p>
+                    </div>
+                  )}
+
+                  <input
+                    id="image"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageUpload}
+                  />
+
+                  <label
+                    htmlFor="image"
+                    className="site-button px-6 py-3 cursor-pointer transition"
+                  >
+                    Upload Image
+                  </label>
+
+                  {image && (
+                    <p className="text-sm site-muted mt-3">
+                      Selected: {image.name}
+                    </p>
+                  )}
+                </div>
+              </section>
+
+              {/* ITEM INFORMATION */}
+
+              <section className="site-card shadow p-8">
+                <h2 className="text-2xl font-bold mb-6 site-heading">
+                  Item Information
+                </h2>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block mb-2 font-semibold site-text">
+                      Item Name
+                    </label>
+
+                    <input
+                      required
+                      name="item_name"
+                      value={formData.item_name}
+                      onChange={handleChange}
+                      placeholder="e.g. Black iPhone 13"
+                      className="site-field site-focus w-full p-3"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block mb-2 font-semibold site-text">
+                      Category
+                    </label>
+
+                    <select
+                      required
+                      name="category"
+                      value={formData.category}
+                      onChange={handleChange}
+                      className="site-field site-focus w-full p-3"
+                    >
+                      <option value="">Select Category</option>
+                      <option value="Electronics">Electronics</option>
+                      <option value="Documents">Documents</option>
+                      <option value="Clothing">Clothing</option>
+                      <option value="Bags">Bags</option>
+                      <option value="Jewelry">Jewelry</option>
+                      <option value="Keys">Keys</option>
+                      <option value="Money">Money</option>
+                      <option value="Pets">Pets</option>
+                      <option value="Others">Others</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <label className="block mb-2 font-semibold site-text">
+                    Description
+                  </label>
+
+                  <textarea
+                    required
+                    rows={5}
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    placeholder="Describe the item in detail..."
+                    className="site-field site-focus w-full p-3"
+                  />
+                </div>
+              </section>
+
+              {/* FOUND DETAILS */}
+
+              <section className="site-card shadow p-8">
+                <h2 className="text-2xl font-bold mb-6 site-heading">
+                  Found Details
+                </h2>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block mb-2 font-semibold site-text">
+                      Location Found
+                    </label>
+
+                    <input
+                      required
+                      name="location_found"
+                      value={formData.location_found}
+                      onChange={handleChange}
+                      placeholder="e.g. Hotel lobby"
+                      className="site-field site-focus w-full p-3"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block mb-2 font-semibold site-text">
+                      Date Found
+                    </label>
+
+                    <input
+                      required
+                      type="date"
+                      name="date_found"
+                      value={formData.date_found}
+                      onChange={handleChange}
+                      className="site-field site-focus w-full p-3"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block mb-2 font-semibold site-text">
+                      Time Found
+                    </label>
+
+                    <input
+                      required
+                      type="time"
+                      name="time_found"
+                      value={formData.time_found}
+                      onChange={handleChange}
+                      className="site-field site-focus w-full p-3"
+                    />
+                  </div>
+                </div>
+              </section>
+
+              {/* FINDER INFORMATION */}
+
+              <section className="site-card shadow p-8">
+                <h2 className="text-2xl font-bold mb-6 site-heading">
+                  Finder Information
+                </h2>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block mb-2 font-semibold site-text">
+                      Your Name
+                    </label>
+
+                    <input
+                      required
+                      name="finder_name"
+                      value={formData.finder_name}
+                      onChange={handleChange}
+                      placeholder="Your Name"
+                      className="site-field site-focus w-full p-3"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block mb-2 font-semibold site-text">
+                      Phone Number
+                    </label>
+
+                    <input
+                      required
+                      type="tel"
+                      name="finder_phone"
+                      value={formData.finder_phone}
+                      onChange={handleChange}
+                      placeholder="Phone Number"
+                      className="site-field site-focus w-full p-3"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block mb-2 font-semibold site-text">
+                      Email Address
+                    </label>
+
+                    <input
+                      required
+                      type="email"
+                      name="finder_email"
+                      value={formData.finder_email}
+                      onChange={handleChange}
+                      placeholder="Email Address"
+                      className="site-field site-focus w-full p-3"
+                    />
+                  </div>
+                </div>
+              </section>
+
+              {/* ACTION BUTTONS */}
+
+              <div className="flex flex-col sm:flex-row justify-end gap-4">
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  disabled={submitting}
+                  className="site-field px-6 py-3 font-semibold transition disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="site-button px-8 py-3 font-semibold transition disabled:opacity-50"
+                >
+                  {submitting
+                    ? "Submitting..."
+                    : "Report Found Item"}
+                </button>
+              </div>
+            </form>
+          </>
+        )}
       </div>
     </main>
   );

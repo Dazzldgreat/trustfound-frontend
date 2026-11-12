@@ -697,50 +697,47 @@ function DashboardPage() {
     // VIEW REPORT
     // ============================================================
 
-    const handleView = (report) => {
-        const normalizedType = String(
-            report.type || ""
-        ).toLowerCase();
 
-        const normalizedStatus = String(
-            report.status || ""
-        ).trim().toLowerCase();
+const handleView = (report) => {
+    const normalizedType = String(
+        report.type || ""
+    ).toLowerCase();
 
-        if (report.match_id) {
-            const matchStatuses = [
-                "matched",
-                "approved",
-                "recovery requested",
-                "recovered",
-            ];
+    const normalizedStatus = String(
+        report.status || ""
+    ).trim().toLowerCase();
 
-            if (matchStatuses.includes(normalizedStatus)) {
-                navigate(
-                    companyRoute(
-                        `/customer-match/${report.match_id}`
-                    )
-                );
-                return;
-            }
-        }
+    if (report.match_id) {
+        const matchStatuses = [
+            "matched",
+            "approved",
+            "recovery requested",
+            "recovered",
+        ];
 
-        if (normalizedType === "lost") {
+        if (matchStatuses.includes(normalizedStatus)) {
             navigate(
                 companyRoute(
-                    `/lost-item/${report.id}`
+                    `/customer-match/${report.match_id}`
                 )
             );
             return;
         }
+    }
 
-        if (normalizedType === "found") {
-            navigate(
-                companyRoute(
-                    `/found-item/${report.id}`
-                )
-            );
-        }
-    };
+    if (normalizedType === "lost") {
+        navigate(
+            companyRoute(`/lost-item/${report.id}`)
+        );
+        return;
+    }
+
+    if (normalizedType === "found") {
+        navigate(
+            companyRoute(`/found-success/${report.id}`)
+        );
+    }
+};
 
     // ============================================================
     // RECOVER
